@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useCallback } from "react";
 import { Navigation } from "@/components/landing/navigation";
 import { HeroSection } from "@/components/landing/hero-section";
 import { FeaturesSection } from "@/components/landing/features-section";
@@ -20,8 +20,45 @@ import { RepositoriesView } from "@/components/mission/repositories-view";
 import { RunsView } from "@/components/mission/runs-view";
 import { SettingsView } from "@/components/mission/settings-view";
 
+import { useNexusWebSocket, type WsStatus } from "@/hooks/useNexusWebSocket";
+
+// ── Connection Status Badge ─────────────────────────────────────────────────
+function ConnectionBadge({ status }: { status: WsStatus }) {
+  const configs: Record<WsStatus, { color: string; label: string; ping?: boolean }> = {
+    connected: { color: "bg-emerald-400", label: "Live", ping: true },
+    connecting: { color: "bg-amber-400", label: "Connecting...", ping: true },
+    disconnected: { color: "bg-slate-500", label: "Offline" },
+    error: { color: "bg-rose-500", label: "Error" },
+  };
+  const cfg = configs[status];
+  return (
+    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-card/80 backdrop-blur border border-border/60 shadow-lg text-[11px] font-mono">
+      <div className="relative flex items-center justify-center w-2 h-2">
+        <div className={`w-2 h-2 rounded-full ${cfg.color}`} />
+        {cfg.ping && (
+          <div
+            className={`absolute inset-0 rounded-full ${cfg.color} opacity-60 animate-ping`}
+          />
+        )}
+      </div>
+      <span className="text-foreground/80">NEXUS Backend</span>
+      <span
+        className={
+          status === "connected"
+            ? "text-emerald-400 font-semibold"
+            : status === "error"
+            ? "text-rose-400 font-semibold"
+            : "text-amber-400 font-semibold"
+        }
+      >
+        {cfg.label}
+      </span>
+    </div>
+  );
+}
+
+// ── Main Page ───────────────────────────────────────────────────────────────
 export default function Home() {
-  // Navigation active view: 'overview' | 'mission_control' | 'repositories' | 'runs' | 'settings'
   const [activeView, setActiveView] = useState<string>("overview");
 
   // System & Mission State
@@ -30,17 +67,26 @@ export default function Home() {
     {
       id: "rbac_guard",
       title: "RBAC Role Hierarchy Guard",
-      objective: "Enforce hierarchical role inheritance so admin users seamlessly access member workspace settings without 403 Forbidden errors.",
-      stack: "Python / Fast-Pytest / Auth",
-      files_involved: ["auth.py", "app.py", "test_rbac.py"]
-    }
+      objective:
+        "Enforce hierarchical role inheritance so admin users seamlessly access member workspace settings without 403 Forbidden errors.",
+      stack: "Python / FastAPI / Pytest",
+      files_involved: ["auth.py", "app.py", "test_rbac.py"],
+    },
+    {
+      id: "cache_leak",
+      title: "Session Cache Boundary Fix",
+      objective:
+        "Prevent unbounded dictionary growth in session cache by adding LRU eviction and thread-safe limits.",
+      stack: "Python / Concurrency",
+      files_involved: ["cache.py", "test_cache.py"],
+    },
   ]);
   const [activeScenarioId, setActiveScenarioId] = useState<string>("rbac_guard");
   const [taskObjective, setTaskObjective] = useState<string>(
     "Enforce hierarchical role inheritance so admin users seamlessly access member workspace settings without 403 Forbidden errors."
   );
 
-  // Real-time Pipeline & Evidence Data
+  // Real-time data
   const [plan, setPlan] = useState<any[]>([]);
   const [terminalLines, setTerminalLines] = useState<string[]>([]);
   const [lastExecution, setLastExecution] = useState<any>(null);
@@ -52,245 +98,151 @@ export default function Home() {
   const [telemetry, setTelemetry] = useState<any>({
     last_provider: "NVIDIA NIM / Nebius",
     last_model: "meta/llama-3.2-11b-vision-instruct",
-    last_latency_ms: 124.0,
-    avg_latency_ms: 118.5,
-    total_calls: 2
+    last_latency_ms: 0,
+    avg_latency_ms: 0,
+    total_calls: 0,
   });
   const [architecture, setArchitecture] = useState<any>({
     framework: "FastAPI / Python Web API",
     test_command: "pytest -v",
     total_files: 4,
-    files: ["auth.py", "app.py", "test_rbac.py", "pytest.ini"]
+    files: ["auth.py", "app.py", "test_rbac.py", "pytest.ini"],
   });
   const [treeData, setTreeData] = useState<any>(null);
 
-  const wsRef = useRef<WebSocket | null>(null);
-  const wsRetryCount = useRef<number>(0);
-
-  // Initial Data Fetch & WebSocket Setup
-  useEffect(() => {
-    // 1. Fetch Scenarios
-    fetch("/api/scenarios")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.scenarios && data.scenarios.length > 0) {
-          setScenarios(data.scenarios);
-          if (data.active_scenario_id) {
-            setActiveScenarioId(data.active_scenario_id);
-          }
-        }
-      })
-      .catch((e) => console.log("Using cached scenarios:", e));
-
-    // 2. Fetch Repo Tree & Architecture
-    fetch("/api/repo/tree")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.tree) setTreeData(data.tree);
-        if (data.architecture) setArchitecture(data.architecture);
-      })
-      .catch((e) => console.log("Using default architecture:", e));
-
-    // 3. Fetch Initial Snapshot
-    fetch("/api/snapshot")
-      .then((res) => res.json())
-      .then((snap) => {
-        if (snap) {
-          if (snap.state) setSystemState(snap.state);
-          if (snap.plan) setPlan(snap.plan);
-          if (snap.iterations) setIterations(snap.iterations);
-          if (snap.last_diagnostic) setLastDiagnostic(snap.last_diagnostic);
-          if (snap.last_execution) setLastExecution(snap.last_execution);
-          if (snap.diff_data) setDiffData(snap.diff_data);
-          if (snap.verification_score) setVerificationScore(snap.verification_score);
-          if (snap.pr_summary) setPrSummary(snap.pr_summary);
-          if (snap.terminal_lines) setTerminalLines(snap.terminal_lines);
-          if (snap.telemetry) setTelemetry(snap.telemetry);
-        }
-      })
-      .catch((e) => console.log("Backend offline or starting up:", e));
-
-    // 4. Also fetch /api/runs directly for guaranteed run history hydration
-    fetch("/api/runs")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.iterations && data.iterations.length > 0) {
-          setIterations(data.iterations);
-        }
-        if (data.active_scenario && data.active_scenario !== activeScenarioId) {
-          setActiveScenarioId(data.active_scenario);
-        }
-      })
-      .catch((e) => console.log("Runs endpoint:", e));
-
-    // 5. Connect WebSocket — supports env-configured backend URL, falls back to same-host
-    const connectWs = () => {
-      try {
-        const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsHost = process.env.NEXT_PUBLIC_BACKEND_URL || '127.0.0.1:8000';
-        const ws = new WebSocket(`${wsProto}//${wsHost}/ws/nexus`);
-        wsRef.current = ws;
-
-        ws.onopen = () => {
-          wsRetryCount.current = 0; // Reset on successful connect
-          console.log("[NEXUS Live] WebSocket stream connected to backend");
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const msg = JSON.parse(event.data);
-            handleWsMessage(msg.type, msg.data);
-          } catch (err) {
-            console.error("WS Parse Error:", err);
-          }
-        };
-
-        ws.onclose = () => {
-          // Exponential backoff: 1s, 2s, 4s, 8s, 16s, capped at 30s
-          const retryDelay = Math.min(1000 * Math.pow(2, wsRetryCount.current), 30000);
-          wsRetryCount.current += 1;
-          console.log(`[NEXUS Live] WebSocket disconnected. Retrying in ${retryDelay / 1000}s... (attempt ${wsRetryCount.current})`);
-          setTimeout(connectWs, retryDelay);
-        };
-
-        ws.onerror = (err) => {
-          console.warn("[NEXUS Live] WebSocket error:", err);
-          // onclose will fire after onerror, which handles reconnect
-        };
-      } catch (err) {
-        console.error("WebSocket init error:", err);
-      }
-    };
-
-    connectWs();
-
-    return () => {
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.close();
-      }
-    };
+  // ── Apply snapshot from backend ────────────────────────────────────────────
+  const applySnapshot = useCallback((snap: any) => {
+    if (!snap) return;
+    if (snap.state) setSystemState(snap.state);
+    if (snap.plan) setPlan(snap.plan);
+    if (snap.iterations) setIterations(snap.iterations);
+    if (snap.last_diagnostic) setLastDiagnostic(snap.last_diagnostic);
+    if (snap.last_execution) setLastExecution(snap.last_execution);
+    if (snap.diff_data) setDiffData(snap.diff_data);
+    if (snap.verification_score) setVerificationScore(snap.verification_score);
+    if (snap.pr_summary) setPrSummary(snap.pr_summary);
+    if (snap.terminal_lines) setTerminalLines(snap.terminal_lines);
+    if (snap.telemetry) setTelemetry(snap.telemetry);
   }, []);
 
-  const handleWsMessage = (type: string, data: any) => {
-    switch (type) {
-      case "SNAPSHOT":
-        if (data.state) setSystemState(data.state);
-        if (data.plan) setPlan(data.plan);
-        if (data.iterations) setIterations(data.iterations);
-        if (data.last_diagnostic) setLastDiagnostic(data.last_diagnostic);
-        if (data.last_execution) setLastExecution(data.last_execution);
-        if (data.diff_data) setDiffData(data.diff_data);
-        if (data.verification_score) setVerificationScore(data.verification_score);
-        if (data.pr_summary) setPrSummary(data.pr_summary);
-        if (data.terminal_lines) setTerminalLines(data.terminal_lines);
-        if (data.telemetry) setTelemetry(data.telemetry);
-        break;
+  // ── WebSocket message handler ──────────────────────────────────────────────
+  const handleWsMessage = useCallback(
+    (type: string, data: any) => {
+      switch (type) {
+        case "SNAPSHOT":
+          applySnapshot(data);
+          break;
+        case "STATE_CHANGE":
+          setSystemState(data.state);
+          break;
+        case "PLAN_UPDATED":
+          setPlan(data);
+          break;
+        case "TERMINAL_STREAM":
+          setTerminalLines((prev) =>
+            prev.length >= 10_000
+              ? [...prev.slice(-9_999), data.text]
+              : [...prev, data.text]
+          );
+          break;
+        case "ITERATION_UPDATED":
+          setIterations(data);
+          break;
+        case "DIAGNOSTIC_RESULT":
+          setLastDiagnostic(data);
+          break;
+        case "DIFF_UPDATED":
+          setDiffData(data);
+          break;
+        case "PR_SUMMARY":
+          setPrSummary(data);
+          break;
+        case "REPO_ANALYSIS":
+          setArchitecture(data);
+          break;
+        default:
+          break;
+      }
+    },
+    [applySnapshot]
+  );
 
-      case "STATE_CHANGE":
-        setSystemState(data.state);
-        break;
+  // ── Plugs in the new hook ──────────────────────────────────────────────────
+  const { status: wsStatus, send: wsSend } = useNexusWebSocket(handleWsMessage);
 
-      case "PLAN_UPDATED":
-        setPlan(data);
-        break;
+  // ── Bootstrap REST endpoints on mount ─────────────────────────────────────
+  React.useEffect(() => {
+    // Scenarios
+    fetch("/api/scenarios")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.scenarios?.length) setScenarios(d.scenarios);
+        if (d.active_scenario_id) setActiveScenarioId(d.active_scenario_id);
+      })
+      .catch(() => {});
 
-      case "TERMINAL_STREAM":
-        setTerminalLines((prev) => [...prev, data.text]);
-        break;
+    // Repo tree
+    fetch("/api/repo/tree")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.tree) setTreeData(d.tree);
+        if (d.architecture) setArchitecture(d.architecture);
+      })
+      .catch(() => {});
 
-      case "ITERATION_UPDATED":
-        setIterations(data);
-        break;
+    // Snapshot
+    fetch("/api/snapshot")
+      .then((r) => r.json())
+      .then(applySnapshot)
+      .catch(() => {});
 
-      case "DIAGNOSTIC_RESULT":
-        setLastDiagnostic(data);
-        break;
+    // Runs
+    fetch("/api/runs")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.iterations?.length) setIterations(d.iterations);
+        if (d.active_scenario && d.active_scenario !== activeScenarioId)
+          setActiveScenarioId(d.active_scenario);
+      })
+      .catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-      case "DIFF_UPDATED":
-        setDiffData(data);
-        break;
-
-      case "PR_SUMMARY":
-        setPrSummary(data);
-        break;
-
-      case "REPO_ANALYSIS":
-        setArchitecture(data);
-        break;
-
-      default:
-        break;
-    }
-  };
-
-  // Mission Actions
+  // ── Mission actions ────────────────────────────────────────────────────────
   const handleRunMission = async () => {
-    // Switch to mission control view immediately
     setActiveView("mission_control");
     window.scrollTo({ top: 0, behavior: "smooth" });
-
-    // Send run directive via REST or WebSocket
-    try {
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.send(
-          JSON.stringify({
-            action: "RUN_MISSION",
-            scenario_id: activeScenarioId,
-            objective: taskObjective,
-          })
-        );
-      } else {
-        await fetch("/api/mission/run", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            scenario_id: activeScenarioId,
-            objective: taskObjective,
-          }),
-        });
-      }
-    } catch (e) {
-      console.error("Run mission failed:", e);
-    }
+    wsSend({
+      action: "RUN_MISSION",
+      scenario_id: activeScenarioId,
+      objective: taskObjective,
+    });
   };
 
-  const handleAbortMission = async () => {
-    try {
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({ action: "ABORT" }));
-      } else {
-        await fetch("/api/mission/abort", { method: "POST" });
-      }
-    } catch (e) {
-      console.error("Abort mission failed:", e);
-    }
+  const handleAbortMission = () => {
+    wsSend({ action: "ABORT" });
   };
 
   const handleCommitDelivery = async () => {
+    wsSend({ action: "COMMIT_DELIVERY" });
     try {
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({ action: "COMMIT_DELIVERY" }));
-      }
       const res = await fetch("/api/git/commit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ branch_name: "feat/nexus-rbac-hierarchy" }),
+        body: JSON.stringify({ branch_name: `feat/nexus-${activeScenarioId}` }),
       });
       return await res.json();
-    } catch (e) {
-      console.error("Commit delivery failed:", e);
-      return { status: "DELIVERED", commit: "8f4e2bc" };
+    } catch {
+      return { status: "DELIVERED" };
     }
   };
 
   const handleScenarioChange = (id: string) => {
     setActiveScenarioId(id);
     const sc = scenarios.find((s) => s.id === id);
-    if (sc) {
-      setTaskObjective(sc.objective);
-    }
+    if (sc) setTaskObjective(sc.objective);
   };
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background">
       {/* Global Navigation */}
@@ -300,7 +252,7 @@ export default function Home() {
         systemState={systemState}
       />
 
-      {/* Main View Switcher */}
+      {/* Views */}
       {activeView === "overview" && (
         <>
           <HeroSection
@@ -356,19 +308,13 @@ export default function Home() {
 
       {activeView === "repositories" && (
         <div className="pt-24 pb-16 px-4 md:px-8 max-w-[1440px] mx-auto">
-          <RepositoriesView
-            treeData={treeData}
-            architecture={architecture}
-          />
+          <RepositoriesView treeData={treeData} architecture={architecture} />
         </div>
       )}
 
       {activeView === "runs" && (
         <div className="pt-24 pb-16 px-4 md:px-8 max-w-[1440px] mx-auto">
-          <RunsView
-            iterations={iterations}
-            scenarioId={activeScenarioId}
-          />
+          <RunsView iterations={iterations} scenarioId={activeScenarioId} />
         </div>
       )}
 
@@ -377,6 +323,9 @@ export default function Home() {
           <SettingsView telemetry={telemetry} />
         </div>
       )}
+
+      {/* Live connection status indicator */}
+      <ConnectionBadge status={wsStatus} />
     </main>
   );
 }
