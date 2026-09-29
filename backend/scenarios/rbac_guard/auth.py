@@ -27,9 +27,15 @@ def authenticate_token(token: Optional[str]) -> Optional[UserContext]:
 def check_permission(user: Optional[UserContext], required_role: str) -> bool:
     """
     Checks if user is authorized for the given role requirement.
-    NOTE: Initial flawed implementation uses strict equality rather than hierarchy.
+    REPAIRED: Admin role inherits all member privileges hierarchically.
     """
     if not user:
         return False
-    # FLAW: Strict equality fails admin on member endpoints
+    
+    if user.role == "admin":
+        return True
+        
+    if required_role == "member" and user.role in ["admin", "member"]:
+        return True
+        
     return user.role == required_role

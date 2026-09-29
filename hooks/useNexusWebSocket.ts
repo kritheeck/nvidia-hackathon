@@ -37,7 +37,7 @@ function calcBackoff(attempt: number): number {
  */
 export function useNexusWebSocket(
   onMessage: (type: string, data: unknown) => void
-): { status: WsStatus; send: (msg: object) => void } {
+): { status: WsStatus; send: (msg: object) => boolean; reconnect: () => void } {
   const [status, setStatus] = useState<WsStatus>("disconnected");
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -65,19 +65,30 @@ export function useNexusWebSocket(
   const connect = useCallback(() => {
     if (!mountedRef.current) return;
 
-    if (retryRef.current >= WS_CONFIG.maxRetries) {
-      if (mountedRef.current) setStatus("error");
-      console.error(`[NEXUS WS] Max retries (${WS_CONFIG.maxRetries}) exceeded.`);
-      return;
-    }
-
     if (mountedRef.current) setStatus("connecting");
 
     try {
-      const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const host =
-        process.env.NEXT_PUBLIC_BACKEND_URL || `${window.location.hostname}:8000`;
-      const url = `${proto}//${host}/ws/nexus`;
+      if (typeof window === "undefined") return;
+
+      const isHttps = window.location.protocol === "https:";
+      let rawHost =
+        process.env.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
+      let url: string;
+
+      if (rawHost) {
+        if (rawHost.startsWith("ws://") || rawHost.startsWith("wss://")) {
+          url = rawHost;
+        } else {
+          rawHost = rawHost
+            .replace(/^https?:\/\//i, "")
+            .replace(/^wss?:\/\//i, "")
+            .replace(/\/+$/, "");
+          url = `${isHttps ? "wss:" : "ws:"}//${rawHost}/ws/nexus`;
+        }
+      } else {
+        const hostname = window.location.hostname || "127.0.0.1";
+        url = `${isHttps ? "wss:" : "ws:"}//${hostname}:8000/ws/nexus`;
+      }
 
       const ws = new WebSocket(url);
       wsRef.current = ws;
@@ -156,15 +167,32 @@ export function useNexusWebSocket(
   }, [connect]);
 
   // ── Send helper ──────────────────────────────────────────────────────────
-  const send = useCallback((msg: object) => {
+  const send = useCallback((msg: object): boolean => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       try {
         wsRef.current.send(JSON.stringify(msg));
+        return true;
       } catch (err) {
         console.warn("[NEXUS WS] Send failed:", err);
+        return false;
       }
     }
+    return false;
   }, []);
 
-  return { status, send };
+  const reconnect = useCallback(() => {
+    retryRef.current = 0;
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (wsRef.current) {
+      try {
+        wsRef.current.close();
+      } catch {
+        // ignore
+      }
+    }
+    connect();
+  }, [connect]);
+
+  return { status, send, reconnect };
 }
+

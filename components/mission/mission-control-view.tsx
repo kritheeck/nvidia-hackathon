@@ -206,12 +206,17 @@ export function MissionControlView({
           <div className="bg-card/60 backdrop-blur-md border border-border/80 rounded-xl p-4 shadow-xl flex flex-col relative overflow-hidden">
             <div className="flex items-center justify-between pb-2 border-b border-border/60 mb-2 z-10">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#76b900]" />
-                <span className="text-xs font-mono font-bold uppercase text-foreground">
-                  NEXUS Core Intelligence
-                </span>
+                <Sparkles className="w-4 h-4 text-[#76b900] shrink-0" />
+                <div>
+                  <div className="text-xs font-mono font-bold uppercase text-foreground leading-tight">
+                    NEXUS Core Intelligence
+                  </div>
+                  <div className="text-[10px] font-mono text-muted-foreground leading-tight">
+                    Autonomous Reasoning Engine • NVIDIA NIM & Subprocess Sandbox
+                  </div>
+                </div>
               </div>
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#76b900]/10 border border-[#76b900]/30 text-[#76b900] font-bold">
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#76b900]/10 border border-[#76b900]/30 text-[#76b900] font-bold shrink-0">
                 {systemState}
               </span>
             </div>

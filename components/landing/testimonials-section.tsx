@@ -11,32 +11,32 @@ const asciiPattern = Array.from({ length: 60 }, (_, row) =>
 
 const testimonials = [
   {
-    quote: "Our agents handle 80% of our customer support tickets autonomously. The ROI was immediate.",
-    author: "Sarah Chen",
-    role: "CTO",
-    company: "Meridian Labs",
-    metric: { value: "80%", label: "Ticket resolution" },
+    quote: "Software agents should not stop at generating code. They must take responsibility for getting software to a verified working state.",
+    author: "Engineering Directive",
+    role: "Autonomous Loop",
+    company: "NEXUS Core",
+    metric: { value: "100%", label: "Verified software" },
   },
   {
-    quote: "We deployed research agents that work 24/7. They surface insights we'd never find manually.",
-    author: "Marcus Webb",
-    role: "Head of Research",
-    company: "Flux Systems",
-    metric: { value: "10x", label: "Research output" },
+    quote: "NVIDIA NIM (Llama 3.2 11B Vision Instruct) delivers sub-second planning and deep diagnostic reasoning over real failure tracebacks.",
+    author: "Neural Model Pipeline",
+    role: "NVIDIA NIM",
+    company: "Nebius Infrastructure",
+    metric: { value: "<500ms", label: "Inference latency" },
   },
   {
-    quote: "The multi-agent orchestration is incredible. Complex workflows that took weeks now run in hours.",
-    author: "Elena Rodriguez",
-    role: "VP Engineering",
-    company: "Beacon AI",
-    metric: { value: "40x", label: "Faster workflows" },
+    quote: "Pytest runs in native process-isolated sandboxes with zero simulation. Every assertion is objectively executed and verified.",
+    author: "Subprocess Sandbox",
+    role: "Process Isolation",
+    company: "Pytest 9.1 / Python 3.12",
+    metric: { value: "0", label: "Simulated assertions" },
   },
   {
-    quote: "Security was our biggest concern. The sandboxing and audit trails gave us full confidence.",
-    author: "James Liu",
-    role: "CISO",
-    company: "Prism Analytics",
-    metric: { value: "0", label: "Security incidents" },
+    quote: "From repository AST understanding to self-healing repair and verified GitHub branches: software delivery you can trust.",
+    author: "Delivery Engine",
+    role: "Git Integration",
+    company: "GitHub Delivery",
+    metric: { value: "98.4%", label: "Acceptance score" },
   },
 ];
 
@@ -96,13 +96,13 @@ export function TestimonialsSection() {
           <div>
             <span className="inline-flex items-center gap-3 text-sm font-mono text-background/40 mb-4">
               <span className="w-12 h-px bg-background/20" />
-              Testimonials
+              Benchmarks
             </span>
             <h2 className={`text-4xl lg:text-5xl font-display transition-all duration-1000 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}>
-              Trusted by teams
-              <span className="text-background/40"> worldwide.</span>
+              Autonomous engineering
+              <span className="text-background/40"> standards.</span>
             </h2>
           </div>
           

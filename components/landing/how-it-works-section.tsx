@@ -5,39 +5,43 @@ import { useEffect, useRef, useState } from "react";
 const steps = [
   {
     number: "01",
-    title: "Define",
-    subtitle: "your agent",
-    description: "Describe what your agent should do. Set its capabilities, constraints, and goals in natural language or code.",
-    code: `const researcher = new Agent({
-  role: 'Research Analyst',
-  capabilities: ['web', 'docs', 'api'],
-  memory: true,
-  autonomy: 'full'
-})`,
+    title: "Inspect",
+    subtitle: "& plan",
+    description: "NEXUS parses workspace AST, maps symbol dependencies, and uses NVIDIA NIM (Llama 3.2 11B) to formulate a strict 6-step engineering plan.",
+    code: `# Stage 1-2: Ingestion & NIM Planning
+intel = RepositoryIntel(repo_path)
+symbols = intel.extract_ast_symbols()
+plan = await plan_engineering_task(
+  objective="Enforce hierarchical RBAC",
+  model="meta/llama-3.2-11b-vision-instruct"
+)`,
   },
   {
     number: "02",
-    title: "Assign",
-    subtitle: "the task",
-    description: "Give your agent a mission. It breaks down complex tasks into steps and executes them autonomously.",
-    code: `await researcher.execute({
-  task: 'Analyze competitor pricing',
-  sources: ['public-data', 'news'],
-  output: 'structured-report',
-  deadline: '2h'
-})`,
+    title: "Execute",
+    subtitle: "& diagnose",
+    description: "NEXUS runs your actual test runner (pytest) in an isolated sandbox. When tests fail, it captures stdout/stderr and queries NVIDIA NIM for root-cause diagnosis.",
+    code: `# Stage 4-5: Sandbox Execution & Traceback Diagnosis
+exec_res = execution_engine.run_tests()
+if not exec_res.passed:
+  diagnostic = await diagnose_failure_evidence(
+    test_output=exec_res.stdout,
+    culprits=["auth.py"]
+  )
+  # Root Cause: RBAC_AUTHORIZATION_FAULT: 403 == 200`,
   },
   {
     number: "03",
-    title: "Monitor",
-    subtitle: "& scale",
-    description: "Track progress in real-time. Spin up more agents as needed. Pay only for compute used.",
-    code: `optimus.dashboard({
-  agents: [researcher],
-  metrics: ['tasks', 'latency', 'cost'],
-  alerts: true
-})
-// 847 tasks completed today`,
+    title: "Repair",
+    subtitle: "& verify",
+    description: "The self-healing engine writes surgical patches to disk, reruns the entire test suite, confirms zero regressions, and delivers verified Git branches.",
+    code: `# Stage 6-9: Autonomous Repair & Retest
+apply_patch("auth.py", repair_ast)
+retest = execution_engine.run_tests()
+assert retest.passed  # 7/7 PASSED (100%)
+await git_delivery.deliver_to_github(
+  branch="feat/nexus-rbac-guard"
+)`,
   },
 ];
 
@@ -88,9 +92,9 @@ export function HowItWorksSection() {
             <h2 className={`text-6xl md:text-7xl lg:text-[128px] font-display tracking-tight leading-[0.85] transition-all duration-1000 delay-100 ${
               isVisible ? "translate-y-0 opacity-100" : "translate-y-16 opacity-0"
             }`}>
-              <span className="block">Define.</span>
-              <span className="block text-white/30">Deploy.</span>
-              <span className="block text-white/10">Scale.</span>
+              <span className="block">Inspect.</span>
+              <span className="block text-white/30">Heal.</span>
+              <span className="block text-white/10">Verify.</span>
             </h2>
           </div>
 

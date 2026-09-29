@@ -53,7 +53,11 @@ const plans = [
   },
 ];
 
-export function PricingSection() {
+interface PricingProps {
+  onSelectPlan?: () => void;
+}
+
+export function PricingSection({ onSelectPlan }: PricingProps) {
   const [isAnnual, setIsAnnual] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
@@ -168,6 +172,7 @@ export function PricingSection() {
 
                   {/* CTA */}
                   <button
+                    onClick={onSelectPlan}
                     className={`w-full py-4 flex items-center justify-center gap-2 text-sm font-medium transition-all group ${
                       plan.highlight
                         ? "bg-foreground text-background hover:bg-foreground/90"

@@ -4,28 +4,28 @@ import { ArrowUpRight } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 const footerLinks = {
-  Product: [
-    { name: "Agent capabilities", href: "#features" },
-    { name: "How it works", href: "#how-it-works" },
-    { name: "Pricing", href: "#pricing" },
-    { name: "Integrations", href: "#integrations" },
+  Platform: [
+    { name: "Self-Healing Loop", href: "#features" },
+    { name: "Architecture & Process", href: "#how-it-works" },
+    { name: "NVIDIA NIM Infrastructure", href: "#infrastructure" },
+    { name: "Objective Verification", href: "#security" },
   ],
-  Developers: [
-    { name: "Documentation", href: "#developers" },
-    { name: "Agent SDK", href: "#" },
-    { name: "API Reference", href: "#developers" },
-    { name: "Status", href: "#" },
+  Architecture: [
+    { name: "Mission Control API", href: "http://127.0.0.1:8000/docs" },
+    { name: "Llama 3.2 11B Vision", href: "#" },
+    { name: "Pytest Process Runner", href: "#" },
+    { name: "Nebius GPU Cloud", href: "#" },
   ],
-  Company: [
-    { name: "About", href: "#" },
-    { name: "Blog", href: "#" },
-    { name: "Careers", href: "#", badge: "Hiring" },
-    { name: "Contact", href: "#" },
+  Project: [
+    { name: "NVIDIA AI Hackathon", href: "#" },
+    { name: "Agentic Engineering Track", href: "#" },
+    { name: "Autonomous Engineering Thesis", href: "#" },
+    { name: "GitHub Repository", href: "https://github.com/kritheeck/nvidia-hackathon" },
   ],
-  Legal: [
-    { name: "Privacy", href: "#" },
-    { name: "Terms", href: "#" },
-    { name: "Security", href: "#security" },
+  Security: [
+    { name: "Subprocess Sandbox", href: "#security" },
+    { name: "Command Allowlist", href: "#security" },
+    { name: "Path Traversal Isolation", href: "#security" },
   ],
 };
 

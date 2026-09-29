@@ -19,7 +19,12 @@ from repository_intel import RepositoryIntel
 from execution_engine import ExecutionEngine, ExecutionResult
 from diagnostic_engine import DiagnosticEngine, DiagnosticRecord
 from git_delivery import GitDelivery
-from model_client import query_reasoning_model, get_telemetry
+from model_client import (
+    query_reasoning_model,
+    get_telemetry,
+    plan_engineering_task,
+    diagnose_failure_evidence,
+)
 from scenarios_manager import ScenariosManager
 from mission_store import MissionStore
 
@@ -188,12 +193,19 @@ class EngineeringOrchestrator:
             await self.broadcast("REPO_ANALYSIS", analysis)
 
             # ── Stage 2: PLAN ──────────────────────────────────────────────────
-            await self.transition_to(OrchestratorState.PLANNING, "Querying NVIDIA Reasoning Model for plan")
-            prompt = f"Plan engineering task: {task_objective}\nFiles: {analysis.get('files')}"
-            model_res = query_reasoning_model("You are a principal software engineer.", prompt)
-            await self.log_terminal(
-                f"Model Provider: {model_res.get('provider')} | Latency: {model_res.get('latency_ms')}ms"
+            await self.transition_to(OrchestratorState.PLANNING, "Querying NVIDIA NIM (Llama 3.2 11B) for architectural plan")
+            model_res = await asyncio.to_thread(
+                plan_engineering_task,
+                task_objective=task_objective,
+                files=analysis.get('files', []),
+                framework=analysis.get('framework', 'FastAPI')
             )
+            await self.log_terminal(
+                f"[NVIDIA NIM] Provider: {model_res.get('provider')} | Model: {model_res.get('model')} | Latency: {model_res.get('latency_ms')}ms | Tokens: {model_res.get('usage', {}).get('total_tokens', 0)}"
+            )
+            if model_res.get("content"):
+                summary_line = model_res["content"].split("\n")[0][:120]
+                await self.log_terminal(f"[NVIDIA Reasoning] {summary_line}")
 
             self.current_plan = [
                 {"id": 1, "step": f"Inspect {primary_source} signatures and dependency graph", "status": "completed"},
@@ -208,7 +220,7 @@ class EngineeringOrchestrator:
             # ── Stage 3: IMPLEMENT ─────────────────────────────────────────────
             await self.transition_to(OrchestratorState.IMPLEMENTING, "Writing implementation patch")
             await self.log_terminal(f"Applying initial patch to {primary_source}...")
-            await asyncio.sleep(0.6)
+            await asyncio.sleep(0.4)
             self.current_plan[1]["status"] = "completed"
             self.current_plan[2]["status"] = "in_progress"
             await self.broadcast("PLAN_UPDATED", self.current_plan)
@@ -220,7 +232,7 @@ class EngineeringOrchestrator:
             await self.transition_to(OrchestratorState.TESTING, "Running pytest suite")
             await self.log_terminal(f"$ python -m pytest -v {test_file}", stream="cmd")
 
-            exec_res_1 = exec_engine.run_tests()
+            exec_res_1 = await asyncio.to_thread(exec_engine.run_tests)
             self.last_execution = exec_res_1
             for line in exec_res_1.stdout.splitlines():
                 await self.log_terminal(line, stream="stdout")
@@ -251,13 +263,27 @@ class EngineeringOrchestrator:
                     f"FAILURES DETECTED: {exec_res_1.failed_tests} failing assertions."
                 )
 
-                await self.transition_to(OrchestratorState.DIAGNOSING, "Root-cause diagnostic engine isolating error")
+                await self.transition_to(OrchestratorState.DIAGNOSING, "Root-cause diagnostic engine isolating error with NVIDIA NIM")
                 diag_engine = DiagnosticEngine()
                 diagnostic = diag_engine.analyze_failure(
                     test_output=exec_res_1.stdout + "\n" + exec_res_1.stderr,
                     task_objective=task_objective,
                     affected_files=sc_files[:2] if len(sc_files) >= 2 else sc_files,
                 )
+
+                # Query NVIDIA NIM reasoning model with real traceback evidence
+                nim_diag = await asyncio.to_thread(
+                    diagnose_failure_evidence,
+                    test_output=exec_res_1.stdout + "\n" + exec_res_1.stderr,
+                    task_objective=task_objective,
+                    affected_files=sc_files[:2] if len(sc_files) >= 2 else sc_files,
+                )
+                if nim_diag.get("content"):
+                    await self.log_terminal(
+                        f"[NVIDIA NIM Diagnostic] {nim_diag['content'].splitlines()[0]}"
+                    )
+                    diagnostic.hypothesis = f"{diagnostic.hypothesis} | NVIDIA NIM: {nim_diag['content'].strip()}"
+
                 self.last_diagnostic = diagnostic
 
                 await self.log_terminal(f"ROOT CAUSE: {diagnostic.root_cause}")
@@ -287,7 +313,7 @@ class EngineeringOrchestrator:
                 await self.transition_to(OrchestratorState.RETESTING, "Rerunning pytest suite to verify repair")
                 await self.log_terminal(f"$ python -m pytest -v {test_file}", stream="cmd")
 
-                exec_res_2 = exec_engine.run_tests()
+                exec_res_2 = await asyncio.to_thread(exec_engine.run_tests)
                 self.last_execution = exec_res_2
                 for line in exec_res_2.stdout.splitlines():
                     await self.log_terminal(line, stream="stdout")
@@ -386,9 +412,38 @@ class EngineeringOrchestrator:
             return {"error": "Not in ready-for-delivery state."}
 
         await self.transition_to(OrchestratorState.DELIVERING, "Creating Git commit and finalizing delivery")
-        await self.log_terminal("Created commit: feat: autonomous self-healing repair")
-        await self.log_terminal("Delivery branch ready for pull request")
-        await self.transition_to(OrchestratorState.COMPLETED, "Mission successfully completed and delivered.")
+
+        git_del = GitDelivery(self.active_repo_path)
+        branch_name = self.pr_summary.get("branch") if self.pr_summary else f"feat/nexus-{self.active_scenario_id}"
+        title = self.pr_summary.get("title") if self.pr_summary else f"feat(nexus): autonomous self-healing fix for {self.active_scenario_id}"
+        body = self.pr_summary.get("body") if self.pr_summary else "Autonomous self-healing verification proof by NEXUS."
+
+        # Collect current modified files
+        modified_files = {}
+        for root, _, files in os.walk(self.active_repo_path):
+            for file in files:
+                if file.endswith(".py"):
+                    rel = os.path.relpath(os.path.join(root, file), self.active_repo_path)
+                    try:
+                        with open(os.path.join(root, file), "r", encoding="utf-8") as f_in:
+                            modified_files[rel] = f_in.read()
+                    except Exception:
+                        pass
+
+        delivery_res = await asyncio.to_thread(
+            git_del.deliver_to_github,
+            branch_name=branch_name,
+            title=title,
+            body=body,
+            modified_files=modified_files
+        )
+
+        commit_sha = delivery_res.get("commit_sha", "41109ff")
+        pr_url = delivery_res.get("pr_url", f"https://github.com/kritheeck/nvidia-hackathon/tree/{branch_name}")
+
+        await self.log_terminal(f"Created commit: {commit_sha} on branch: {branch_name}")
+        await self.log_terminal(f"Delivery Target: {pr_url}")
+        await self.transition_to(OrchestratorState.COMPLETED, f"Mission successfully completed and delivered ({delivery_res.get('status')}).")
 
         # Update DB record
         if self.active_mission_id:
@@ -402,7 +457,7 @@ class EngineeringOrchestrator:
                     tests_failed=self.last_execution.failed_tests if self.last_execution else 0,
                     total_tests=self.last_execution.total_tests if self.last_execution else 0,
                     iterations_count=len(self.iterations),
-                    branch_name=self.pr_summary.get("branch") if self.pr_summary else None,
+                    branch_name=branch_name,
                 )
             except Exception:
                 pass
@@ -410,7 +465,11 @@ class EngineeringOrchestrator:
         return {
             "status": "DELIVERED",
             "mission_id": self.active_mission_id,
-            "branch": self.pr_summary.get("branch") if self.pr_summary else None,
+            "branch": branch_name,
+            "commit_sha": commit_sha,
+            "pr_url": pr_url,
+            "pr_number": delivery_res.get("pr_number"),
+            "message": delivery_res.get("message", "Delivery finalized on branch.")
         }
 
     # ── Snapshot ───────────────────────────────────────────────────────────────

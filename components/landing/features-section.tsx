@@ -5,27 +5,27 @@ import { useEffect, useRef, useState } from "react";
 const features = [
   {
     number: "01",
-    title: "Autonomous Execution",
-    description: "Deploy AI agents that work independently. They analyze, decide, and execute complex multi-step tasks without human intervention.",
-    stats: { value: "99.7%", label: "task completion" },
+    title: "Autonomous Self-Healing Loop",
+    description: "Agents shouldn't stop at code generation. NEXUS executes pytest, captures failures, isolates assertion faults, and autonomously repairs code until objectively verified.",
+    stats: { value: "100%", label: "retest pass rate" },
   },
   {
     number: "02",
-    title: "Distributed Computing",
-    description: "Offload compute-heavy tasks to our global network. Your agents run on optimized infrastructure across 50+ regions worldwide.",
-    stats: { value: "50+", label: "global regions" },
+    title: "NVIDIA NIM Intelligence",
+    description: "Powered by NVIDIA open-source reasoning models (Llama 3.2 11B Vision Instruct) executing multi-stage architectural planning and deep failure traceback analysis.",
+    stats: { value: "<500ms", label: "model latency" },
   },
   {
     number: "03",
-    title: "Multi-Agent Orchestration",
-    description: "Coordinate teams of specialized agents. They communicate, delegate, and collaborate to solve complex problems together.",
-    stats: { value: "1000x", label: "parallel execution" },
+    title: "Process-Isolated Sandboxing",
+    description: "Native subprocess runner with zero shell interpolation. Captures true stdout, stderr, and exit codes for deterministic reproducibility.",
+    stats: { value: "0", label: "faked assertions" },
   },
   {
     number: "04",
-    title: "Secure Sandboxing",
-    description: "Each agent runs in isolated environments. Full audit trails, encrypted execution, and zero data leakage between tasks.",
-    stats: { value: "0", label: "data breaches" },
+    title: "Verified Git Delivery",
+    description: "Objective proof criteria (98.4% passing score) required before shipping. Stages verified Git branches, commits, and GitHub Pull Requests.",
+    stats: { value: "98.4%", label: "verification score" },
   },
 ];
 
@@ -165,16 +165,16 @@ export function FeaturesSection() {
                   isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
               >
-                Intelligent
+                Self-healing
                 <br />
-                <span className="text-muted-foreground">workers.</span>
+                <span className="text-muted-foreground">systems.</span>
               </h2>
             </div>
             <div className="lg:col-span-5 lg:pb-4">
               <p className={`text-xl text-muted-foreground leading-relaxed transition-all duration-1000 delay-200 ${
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               }`}>
-                Deploy autonomous AI agents that execute complex tasks across distributed infrastructure. No supervision required.
+                Software agents that take full responsibility for repository understanding, subprocess execution, failure diagnosis, self-healing code repair, and verified delivery.
               </p>
             </div>
           </div>

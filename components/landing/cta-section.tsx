@@ -4,10 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
-export function CtaSection() {
+interface CtaProps {
+  onStartMission?: () => void;
+  onOpenRepositories?: () => void;
+  onLaunch?: () => void;
+}
+
+export function CtaSection({ onStartMission, onOpenRepositories, onLaunch }: CtaProps) {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  const handleLaunch = onStartMission || onLaunch;
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -53,33 +61,34 @@ export function CtaSection() {
                 <h2 className="text-6xl md:text-7xl lg:text-[72px] font-display tracking-tight mb-8 leading-[0.95]">
                   Ready to delegate
                   <br />
-                  to AI agents?
+                  to autonomous AI?
                 </h2>
 
                 <p className="text-xl text-muted-foreground mb-12 leading-relaxed max-w-xl">
-                  Join teams automating complex workflows with COMPUTE agents. 
-                  Deploy your first agent in minutes.
+                  Take responsibility for making software work. NEXUS writes code, executes tests, isolates failure root causes, and autonomously verifies self-healing repairs.
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-start gap-4">
                   <Button
+                    onClick={handleLaunch}
                     size="lg"
-                    className="bg-foreground hover:bg-foreground/90 text-background px-8 h-14 text-base rounded-full group"
+                    className="bg-[#76b900] hover:bg-[#85cf00] text-black font-bold uppercase font-mono text-xs px-8 h-14 rounded-full group shadow-lg shadow-[#76b900]/25"
                   >
-                    Deploy your first agent
+                    Launch Mission Control
                     <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
                   </Button>
                   <Button
+                    onClick={onOpenRepositories}
                     size="lg"
                     variant="outline"
-                    className="h-14 px-8 text-base rounded-full border-foreground/20 hover:bg-foreground/5"
+                    className="h-14 px-8 text-xs uppercase font-mono rounded-full border-foreground/20 hover:bg-foreground/5"
                   >
-                    Book a demo
+                    Inspect Repositories
                   </Button>
                 </div>
 
-                <p className="text-sm text-muted-foreground mt-8 font-mono">
-                  1,000 free tasks with COMPUTE
+                <p className="text-sm text-[#76b900] mt-8 font-mono">
+                  Powered by NVIDIA NIM &amp; Nebius Cloud Infrastructure
                 </p>
               </div>
 

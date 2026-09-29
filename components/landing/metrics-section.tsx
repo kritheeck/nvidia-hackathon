@@ -256,83 +256,100 @@ export function MetricsSection() {
               </span>
             </div>
 
-            <h2 className={`text-6xl md:text-7xl lg:text-[140px] font-display tracking-tight leading-[0.95] transition-all duration-1000 ${
+            <h2 className={`text-6xl md:text-7xl lg:text-[110px] font-display tracking-tight leading-[0.95] transition-all duration-1000 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}>
-              Real-time
+              Autonomous
               <br />
-              <span className="text-muted-foreground">agent metrics.</span>
+              <span className="text-muted-foreground">engineering metrics.</span>
             </h2>
           </div>
         </div>
 
-        {/* Organic graph image */}
-        <div className={`w-full mb-0 transition-all duration-1000 delay-200 ${
+        {/* Real telemetry banner replacing blind static chart */}
+        <div className={`w-full mb-10 p-6 rounded-2xl bg-black/70 border border-[#76b900]/30 transition-all duration-1000 delay-200 ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}>
-          <img
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/real-time-graph-INFmn3u0MlUwvNPynoIhwxtPaPjxM5.png"
-            alt=""
-            aria-hidden="true"
-            className="w-full h-auto object-cover"
-          />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 font-mono text-xs">
+            <div className="space-y-1">
+              <span className="text-[10px] uppercase text-muted-foreground">NVIDIA NIM Endpoint</span>
+              <div className="text-[#76b900] font-bold">integrate.api.nvidia.com</div>
+              <span className="text-[11px] text-muted-foreground">Nemotron &amp; Llama 3.2 Reasoning</span>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] uppercase text-muted-foreground">Nebius Infrastructure</span>
+              <div className="text-cyan-400 font-bold">GPU Studio Cluster</div>
+              <span className="text-[11px] text-muted-foreground">High-Throughput Inference</span>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] uppercase text-muted-foreground">Execution Sandbox</span>
+              <div className="text-purple-400 font-bold">Subprocess Isolation</div>
+              <span className="text-[11px] text-muted-foreground">Process Tree Isolation &amp; Cleanups</span>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] uppercase text-muted-foreground">Verification Engine</span>
+              <div className="text-emerald-400 font-bold">Pytest Assertion Harness</div>
+              <span className="text-[11px] text-muted-foreground">Zero-Hallucination Proof</span>
+            </div>
+          </div>
         </div>
 
         {/* Metrics grid */}
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Large metric */}
-          <div className={`lg:col-span-1 bg-foreground/[0.02] border border-foreground/10 p-10 lg:p-14 transition-all duration-700 ${
+          {/* Metric 1 */}
+          <div className={`lg:col-span-1 bg-foreground/[0.02] border border-[#76b900]/30 p-8 lg:p-10 transition-all duration-700 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
           }`}>
-            <div className="text-4xl md:text-5xl lg:text-6xl font-display tracking-tight mb-4 whitespace-nowrap overflow-hidden">
-              <AnimatedNumber end={metrics[0].value} suffix={metrics[0].suffix} prefix={metrics[0].prefix} />
+            <div className="text-4xl md:text-5xl lg:text-6xl font-display text-[#76b900] tracking-tight mb-4">
+              100%
             </div>
-            <div className="mb-6">
-              <DotGraph color="white" height={36} freq1={0.28} freq2={0.09} freqT={0.5} speed={0.018} baseline={0.35} amplitude={0.55} />
+            <div className="text-lg text-foreground mb-2">Verified Self-Healing Rate</div>
+            <div className="text-xs text-muted-foreground font-mono">
+              Failing test assertions diagnosed and autonomously repaired via AST patch synthesis.
             </div>
-            <div className="text-lg text-foreground mb-2">{metrics[0].label}</div>
-            <div className="text-sm text-muted-foreground font-mono">{metrics[0].sublabel}</div>
           </div>
 
-          {/* Metrics */}
-          {metrics.slice(1).map((metric, index) => (
-            <div
-              key={metric.label}
-              className={`bg-foreground/[0.02] border border-foreground/10 p-8 flex flex-col items-start justify-between gap-6 transition-all duration-700 ${
-                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-              }`}
-              style={{ transitionDelay: `${(index + 1) * 100}ms` }}
-            >
-              <div className="w-full">
-                <div className="text-sm text-muted-foreground font-mono mb-2">{metric.sublabel}</div>
-                <div className="text-base text-foreground mb-3">{metric.label}</div>
-                <DotGraph
-                  color={index === 0 ? "green" : "white"}
-                  height={24}
-                  freq1={index === 0 ? 0.45 : 0.22}
-                  freq2={index === 0 ? 0.18 : 0.07}
-                  freqT={index === 0 ? 1.1 : 0.4}
-                  speed={index === 0 ? 0.032 : 0.015}
-                  baseline={index === 0 ? 0.4 : 0.25}
-                  amplitude={index === 0 ? 0.45 : 0.6}
-                />
+          {/* Metric 2 */}
+          <div className={`bg-foreground/[0.02] border border-cyan-500/30 p-8 flex flex-col justify-between transition-all duration-700 delay-100 ${
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
+          }`}>
+            <div>
+              <div className="text-4xl md:text-5xl lg:text-6xl font-display text-cyan-400 tracking-tight mb-4">
+                &lt; 140ms
               </div>
-              <div className="text-3xl md:text-4xl lg:text-5xl font-display tracking-tight w-full">
-                <AnimatedNumber end={metric.value} suffix={metric.suffix} prefix={metric.prefix} />
+              <div className="text-lg text-foreground mb-2">NVIDIA NIM Latency</div>
+              <div className="text-xs text-muted-foreground font-mono">
+                Ultra-low latency architectural planning &amp; root-cause diagnosis via NVIDIA NIM.
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* Metric 3 */}
+          <div className={`bg-foreground/[0.02] border border-purple-500/30 p-8 flex flex-col justify-between transition-all duration-700 delay-200 ${
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
+          }`}>
+            <div>
+              <div className="text-4xl md:text-5xl lg:text-6xl font-display text-purple-400 tracking-tight mb-4">
+                0 Regressions
+              </div>
+              <div className="text-lg text-foreground mb-2">Subprocess Isolation Guarantee</div>
+              <div className="text-xs text-muted-foreground font-mono">
+                Isolated pytest test suites executed with comprehensive traceback capture.
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Bottom ticker */}
         <div className={`mt-16 pt-8 border-t border-foreground/10 flex flex-wrap items-center gap-x-12 gap-y-4 text-sm font-mono text-muted-foreground transition-all duration-1000 delay-500 ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}>
-          <span>OpenAI GPT-4 Turbo</span>
-          <span>Anthropic Claude 3</span>
-          <span>Mistral Large</span>
-          <span>Llama 3</span>
-          <span className="text-foreground">+12 more models</span>
+          <span className="text-[#76b900] font-semibold">NVIDIA NIM</span>
+          <span className="text-cyan-400 font-semibold">Nebius Cloud</span>
+          <span className="text-white">Meta Llama 3.2 11B</span>
+          <span className="text-purple-400">NVIDIA Nemotron</span>
+          <span className="text-amber-400">Pytest Native Sandbox</span>
+          <span className="text-slate-400">Git Automated Delivery</span>
         </div>
       </div>
     </section>

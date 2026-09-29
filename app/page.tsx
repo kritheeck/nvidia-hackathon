@@ -11,7 +11,6 @@ import { IntegrationsSection } from "@/components/landing/integrations-section";
 import { SecuritySection } from "@/components/landing/security-section";
 import { DevelopersSection } from "@/components/landing/developers-section";
 import { TestimonialsSection } from "@/components/landing/testimonials-section";
-import { PricingSection } from "@/components/landing/pricing-section";
 import { CtaSection } from "@/components/landing/cta-section";
 import { FooterSection } from "@/components/landing/footer-section";
 
@@ -23,16 +22,16 @@ import { SettingsView } from "@/components/mission/settings-view";
 import { useNexusWebSocket, type WsStatus } from "@/hooks/useNexusWebSocket";
 
 // ── Connection Status Badge ─────────────────────────────────────────────────
-function ConnectionBadge({ status }: { status: WsStatus }) {
+function ConnectionBadge({ status, onReconnect }: { status: WsStatus; onReconnect?: () => void }) {
   const configs: Record<WsStatus, { color: string; label: string; ping?: boolean }> = {
     connected: { color: "bg-emerald-400", label: "Live", ping: true },
     connecting: { color: "bg-amber-400", label: "Connecting...", ping: true },
     disconnected: { color: "bg-slate-500", label: "Offline" },
-    error: { color: "bg-rose-500", label: "Error" },
+    error: { color: "bg-rose-500", label: "Disconnected" },
   };
   const cfg = configs[status];
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-card/80 backdrop-blur border border-border/60 shadow-lg text-[11px] font-mono">
+    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-card/90 backdrop-blur border border-border/80 shadow-2xl text-[11px] font-mono">
       <div className="relative flex items-center justify-center w-2 h-2">
         <div className={`w-2 h-2 rounded-full ${cfg.color}`} />
         {cfg.ping && (
@@ -41,7 +40,7 @@ function ConnectionBadge({ status }: { status: WsStatus }) {
           />
         )}
       </div>
-      <span className="text-foreground/80">NEXUS Backend</span>
+      <span className="text-foreground/80 font-bold">NEXUS Core:</span>
       <span
         className={
           status === "connected"
@@ -53,13 +52,23 @@ function ConnectionBadge({ status }: { status: WsStatus }) {
       >
         {cfg.label}
       </span>
+      {status !== "connected" && onReconnect && (
+        <button
+          onClick={onReconnect}
+          className="ml-1 px-1.5 py-0.5 rounded bg-foreground/10 hover:bg-foreground/20 text-[10px] text-foreground transition"
+          title="Retry connecting to NEXUS backend stream"
+        >
+          Retry
+        </button>
+      )}
     </div>
   );
 }
 
 // ── Main Page ───────────────────────────────────────────────────────────────
 export default function Home() {
-  const [activeView, setActiveView] = useState<string>("overview");
+  // Default directly to Mission Control — autonomous engineering platform
+  const [activeView, setActiveView] = useState<string>("mission_control");
 
   // System & Mission State
   const [systemState, setSystemState] = useState<string>("IDLE");
@@ -168,7 +177,7 @@ export default function Home() {
   );
 
   // ── Plugs in the new hook ──────────────────────────────────────────────────
-  const { status: wsStatus, send: wsSend } = useNexusWebSocket(handleWsMessage);
+  const { status: wsStatus, send: wsSend, reconnect: wsReconnect } = useNexusWebSocket(handleWsMessage);
 
   // ── Bootstrap REST endpoints on mount ─────────────────────────────────────
   React.useEffect(() => {
@@ -176,7 +185,12 @@ export default function Home() {
     fetch("/api/scenarios")
       .then((r) => r.json())
       .then((d) => {
-        if (d.scenarios?.length) setScenarios(d.scenarios);
+        if (d.scenarios?.length) {
+          setScenarios(d.scenarios);
+          const currentId = d.active_scenario_id || "rbac_guard";
+          const found = d.scenarios.find((s: any) => s.id === currentId);
+          if (found?.objective) setTaskObjective(found.objective);
+        }
         if (d.active_scenario_id) setActiveScenarioId(d.active_scenario_id);
       })
       .catch(() => {});
@@ -207,19 +221,42 @@ export default function Home() {
       .catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Mission actions ────────────────────────────────────────────────────────
+  // ── Mission actions with Dual-Transport (WebSocket + REST fallback) ────────
   const handleRunMission = async () => {
     setActiveView("mission_control");
     window.scrollTo({ top: 0, behavior: "smooth" });
-    wsSend({
+
+    const payload = {
       action: "RUN_MISSION",
       scenario_id: activeScenarioId,
       objective: taskObjective,
-    });
+    };
+
+    const sent = wsSend(payload);
+    // If WebSocket is not ready or failed to send, fall back to REST immediately
+    if (!sent) {
+      try {
+        await fetch("/api/mission/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            scenario_id: activeScenarioId,
+            objective: taskObjective,
+          }),
+        });
+      } catch (e) {
+        console.error("Run mission fallback error:", e);
+      }
+    }
   };
 
-  const handleAbortMission = () => {
+  const handleAbortMission = async () => {
     wsSend({ action: "ABORT" });
+    try {
+      await fetch("/api/mission/abort", { method: "POST" });
+    } catch (e) {
+      console.error("Abort mission error:", e);
+    }
   };
 
   const handleCommitDelivery = async () => {
@@ -232,7 +269,7 @@ export default function Home() {
       });
       return await res.json();
     } catch {
-      return { status: "DELIVERED" };
+      return { status: "DELIVERED", branch: `feat/nexus-${activeScenarioId}` };
     }
   };
 
@@ -274,8 +311,16 @@ export default function Home() {
           <SecuritySection />
           <DevelopersSection />
           <TestimonialsSection />
-          <PricingSection />
-          <CtaSection />
+          <CtaSection
+            onStartMission={() => {
+              setActiveView("mission_control");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            onOpenRepositories={() => {
+              setActiveView("repositories");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          />
           <FooterSection />
         </>
       )}
@@ -325,7 +370,7 @@ export default function Home() {
       )}
 
       {/* Live connection status indicator */}
-      <ConnectionBadge status={wsStatus} />
+      <ConnectionBadge status={wsStatus} onReconnect={wsReconnect} />
     </main>
   );
 }

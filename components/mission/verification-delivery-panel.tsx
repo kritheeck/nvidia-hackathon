@@ -108,18 +108,25 @@ export function VerificationDeliveryPanel({
 
           {/* Action Button */}
           {deliveredStatus || isDelivered ? (
-            <div className="p-3 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 flex items-center justify-between">
+            <div className="p-3 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2 font-mono">
               <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-400" />
-                <span className="font-semibold text-xs">Delivered to Branch & Pull Request Ready</span>
+                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span className="font-semibold text-xs">
+                  {deliveredStatus?.message || "Delivered to Branch & Pull Request Ready"}
+                </span>
               </div>
               <a
-                href={deliveredStatus?.pr_url || "#"}
+                href={deliveredStatus?.pr_url || `https://github.com/kritheeck/nvidia-hackathon/tree/${prSummary?.branch || "feat/nexus-delivery"}`}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[10px] underline flex items-center gap-1 hover:text-white"
+                className="text-[11px] font-mono text-[#76b900] underline flex items-center gap-1 hover:text-white shrink-0"
               >
-                PR #14 <ArrowUpRight className="w-3 h-3" />
+                {deliveredStatus?.pr_number
+                  ? `Pull Request #${deliveredStatus.pr_number}`
+                  : deliveredStatus?.commit_sha
+                  ? `Commit ${deliveredStatus.commit_sha}`
+                  : "View Delivery on GitHub"}
+                <ArrowUpRight className="w-3 h-3" />
               </a>
             </div>
           ) : (
