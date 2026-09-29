@@ -20,3 +20,8 @@ __pycache__/
 *.pyc
 .env
 .vscode/devBoost/
+
+__pycache__/
+*.pyc
+.env
+.vscode/devBoost/
