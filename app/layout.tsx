@@ -21,9 +21,14 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'COMPUTE - AI Agents for Distributed Computing',
-  description: 'Deploy autonomous AI agents on distributed infrastructure. Offload complex tasks to intelligent workers that run 24/7.',
-  generator: 'v0.app',
+  title: 'NEXUS — Autonomous Software Engineering Platform',
+  description: 'NEXUS autonomously debugs, repairs, and delivers software. Powered by NVIDIA NIM & Nebius AI infrastructure — real pytest execution, self-healing repair, and GitHub delivery.',
+  keywords: ['autonomous engineering', 'AI coding', 'NVIDIA NIM', 'self-healing software', 'automated testing'],
+  openGraph: {
+    title: 'NEXUS — Autonomous Software Engineering Platform',
+    description: 'AI that autonomously fixes bugs, runs tests, and ships verified pull requests.',
+    type: 'website',
+  },
 }
 
 export default function RootLayout({

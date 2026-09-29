@@ -242,7 +242,14 @@ class EngineeringOrchestrator:
             # Stage 8: REVIEWING & VERIFYING
             await self.transition_to(OrchestratorState.REVIEWING, "Performing final static analysis and diff computation")
             initial_src = self.scenarios_manager.get_initial_file_content(scenario_id, primary_source)
-            current_src = intel.get_file_content(primary_source) or ""
+            # Read current (post-repair) file directly from disk — intel is stale from pre-repair state
+            patched_file_path = os.path.join(self.active_repo_path, primary_source)
+            try:
+                with open(patched_file_path, "r", encoding="utf-8") as f:
+                    current_src = f.read()
+            except Exception:
+                current_src = intel.get_file_content(primary_source) or ""
+
             
             git_del = GitDelivery(self.active_repo_path)
             self.diff_data = git_del.compute_diff(

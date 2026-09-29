@@ -16,3 +16,7 @@ next.user-config.*
 node_modules
 .next/
 .DS_Store
+__pycache__/
+*.pyc
+.env
+.vscode/devBoost/

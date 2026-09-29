@@ -1,0 +1,24 @@
+## NEXUS Backend — Python Requirements
+## Python 3.11+ required
+## Install: pip install -r requirements.txt
+
+# FastAPI web framework
+fastapi==0.141.1
+
+# ASGI server
+uvicorn[standard]==0.52.4
+
+# Data validation
+pydantic==2.13.4
+
+# Test runner (used inside the execution sandbox)
+pytest==9.1.1
+
+# WebSocket support for uvicorn
+websockets>=12.0
+
+# Optional: Real GitHub PR creation (uncomment if using GITHUB_TOKEN)
+# PyGithub>=2.3.0
+
+# Optional: For enhanced test output
+# pytest-asyncio>=0.23.0

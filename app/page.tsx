@@ -65,6 +65,7 @@ export default function Home() {
   const [treeData, setTreeData] = useState<any>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
+  const wsRetryCount = useRef<number>(0);
 
   // Initial Data Fetch & WebSocket Setup
   useEffect(() => {
@@ -122,14 +123,17 @@ export default function Home() {
       })
       .catch((e) => console.log("Runs endpoint:", e));
 
-    // 5. Connect WebSocket directly to port 8000
+    // 5. Connect WebSocket — supports env-configured backend URL, falls back to same-host
     const connectWs = () => {
       try {
-        const ws = new WebSocket("ws://127.0.0.1:8000/ws/nexus");
+        const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsHost = process.env.NEXT_PUBLIC_BACKEND_URL || '127.0.0.1:8000';
+        const ws = new WebSocket(`${wsProto}//${wsHost}/ws/nexus`);
         wsRef.current = ws;
 
         ws.onopen = () => {
-          console.log("[NEXUS Live] WebSocket stream connected to backend:8000");
+          wsRetryCount.current = 0; // Reset on successful connect
+          console.log("[NEXUS Live] WebSocket stream connected to backend");
         };
 
         ws.onmessage = (event) => {
@@ -142,8 +146,16 @@ export default function Home() {
         };
 
         ws.onclose = () => {
-          console.log("[NEXUS Live] WebSocket stream disconnected. Retrying in 4s...");
-          setTimeout(connectWs, 4000);
+          // Exponential backoff: 1s, 2s, 4s, 8s, 16s, capped at 30s
+          const retryDelay = Math.min(1000 * Math.pow(2, wsRetryCount.current), 30000);
+          wsRetryCount.current += 1;
+          console.log(`[NEXUS Live] WebSocket disconnected. Retrying in ${retryDelay / 1000}s... (attempt ${wsRetryCount.current})`);
+          setTimeout(connectWs, retryDelay);
+        };
+
+        ws.onerror = (err) => {
+          console.warn("[NEXUS Live] WebSocket error:", err);
+          // onclose will fire after onerror, which handles reconnect
         };
       } catch (err) {
         console.error("WebSocket init error:", err);
