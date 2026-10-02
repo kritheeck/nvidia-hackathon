@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { 
   Play, Square, Cpu, Zap, FolderGit2, CheckCircle2, 
   AlertTriangle, Terminal, Stethoscope, FileCode, GitPullRequest, 
-  Layers, RefreshCw, Sparkles, Shield, ChevronRight
+  Layers, RefreshCw, Sparkles, Shield, ChevronRight, GitBranch
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NexusCore3D } from "./nexus-core-3d";
@@ -39,7 +39,7 @@ interface MissionControlProps {
 export function MissionControlView({
   systemState = "IDLE",
   scenarios = [],
-  activeScenarioId = "rbac_guard",
+  activeScenarioId = "rbac-service",
   onSelectScenario,
   taskObjective,
   onTaskChange,
@@ -59,6 +59,7 @@ export function MissionControlView({
 }: MissionControlProps) {
   // Active bottom panel tab: 'terminal' | 'diagnosis' | 'diff' | 'delivery'
   const [activeBottomTab, setActiveBottomTab] = useState<"terminal" | "diagnosis" | "diff" | "delivery">("terminal");
+  const [autonomyMode, setAutonomyMode] = useState<"AUTONOMOUS" | "SUPERVISED">("AUTONOMOUS");
 
   const isRunning = [
     "CONNECTING", "INGESTING_REPOSITORY", "ANALYZING", "PLANNING", 
@@ -67,30 +68,78 @@ export function MissionControlView({
 
   const isRepaired = iterations.length > 1 && iterations[iterations.length - 1]?.passed;
 
+  const quickPrompts = [
+    {
+      label: "RBAC Role Hierarchy",
+      text: "Enforce hierarchical role inheritance so admin users seamlessly access member workspace settings without 403 Forbidden errors.",
+      repoId: "rbac-service"
+    },
+    {
+      label: "Cache Memory Bound",
+      text: "Prevent unbounded dictionary growth in session cache by adding LRU eviction and thread-safe limits.",
+      repoId: "session-cache-service"
+    },
+    {
+      label: "Task API Validation",
+      text: "Add status transition guards and ensure task titles cannot be whitespace-only.",
+      repoId: "task-manager-api"
+    }
+  ];
+
   return (
     <div className="flex flex-col gap-5 w-full">
-      {/* 1. Top Bar: Scenario Selector & Task Objective Dispatch */}
+      {/* 1. Top Bar: Target Repository Selector & Custom Intent Dispatch */}
       <div className="bg-card/70 backdrop-blur-md border border-border/80 rounded-xl p-4 shadow-xl">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex-1 space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-mono text-muted-foreground uppercase font-semibold">
-                Target Scenario:
-              </span>
-              <div className="flex items-center gap-1.5">
-                {scenarios.map((sc) => (
-                  <button
-                    key={sc.id}
-                    onClick={() => onSelectScenario(sc.id)}
-                    className={`px-2.5 py-1 rounded text-xs font-mono transition border ${
-                      activeScenarioId === sc.id
-                        ? "bg-[#76b900]/15 border-[#76b900]/50 text-[#76b900] font-bold"
-                        : "bg-muted/30 border-border text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {sc.title}
-                  </button>
-                ))}
+          <div className="flex-1 space-y-2.5">
+            {/* Target Repository Selector & Autonomy Mode */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-mono text-muted-foreground uppercase font-semibold flex items-center gap-1.5">
+                  <FolderGit2 className="w-3.5 h-3.5 text-[#76b900]" />
+                  Active Target Repository:
+                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {scenarios.map((sc) => (
+                    <button
+                      key={sc.id}
+                      onClick={() => onSelectScenario(sc.id)}
+                      className={`px-2.5 py-1 rounded text-xs font-mono transition border ${
+                        activeScenarioId === sc.id
+                          ? "bg-[#76b900]/15 border-[#76b900]/50 text-[#76b900] font-bold"
+                          : "bg-muted/30 border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {sc.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Autonomy Mode Switcher */}
+              <div className="flex items-center gap-1 bg-black/40 p-1 rounded border border-border/60 text-[11px] font-mono">
+                <button
+                  type="button"
+                  onClick={() => setAutonomyMode("AUTONOMOUS")}
+                  className={`px-2 py-0.5 rounded transition ${
+                    autonomyMode === "AUTONOMOUS"
+                      ? "bg-[#76b900]/20 text-[#76b900] font-bold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Autonomous
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAutonomyMode("SUPERVISED")}
+                  className={`px-2 py-0.5 rounded transition ${
+                    autonomyMode === "SUPERVISED"
+                      ? "bg-amber-500/20 text-amber-300 font-bold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Supervised
+                </button>
               </div>
             </div>
 
@@ -104,13 +153,34 @@ export function MissionControlView({
                 value={taskObjective}
                 onChange={(e) => onTaskChange(e.target.value)}
                 className="w-full bg-black/50 border border-border/70 rounded px-3 py-1.5 text-xs font-mono text-foreground focus:outline-none focus:border-[#76b900]/60 transition"
-                placeholder="Enter autonomous software engineering objective..."
+                placeholder="Enter any autonomous software engineering objective, bug report, or feature request..."
               />
+            </div>
+
+            {/* Quick Prompt Suggestions */}
+            <div className="flex items-center gap-2 flex-wrap pt-0.5">
+              <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                Quick Prompts:
+              </span>
+              {quickPrompts.map((qp, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    onTaskChange(qp.text);
+                    if (qp.repoId && scenarios.some(s => s.id === qp.repoId)) {
+                      onSelectScenario(qp.repoId);
+                    }
+                  }}
+                  className="px-2 py-0.5 rounded text-[10px] font-mono bg-muted/20 hover:bg-muted/40 text-slate-300 border border-border/40 hover:border-border transition"
+                >
+                  {qp.label}
+                </button>
+              ))}
             </div>
           </div>
 
           {/* Action CTA Buttons */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 self-start lg:self-center">
             {isRunning ? (
               <Button
                 onClick={onAbortMission}
@@ -155,12 +225,12 @@ export function MissionControlView({
               <div className="space-y-3 font-mono text-xs">
                 <div>
                   <span className="text-[10px] text-muted-foreground uppercase">Framework & Runner</span>
-                  <div className="text-foreground font-semibold">{architecture.framework}</div>
-                  <div className="text-[11px] text-cyan-400">{architecture.test_command}</div>
+                  <div className="text-foreground font-semibold">{architecture.framework || "Python"}</div>
+                  <div className="text-[11px] text-cyan-400">{architecture.test_command || "pytest -v"}</div>
                 </div>
 
                 <div>
-                  <span className="text-[10px] text-muted-foreground uppercase">Source Files ({architecture.total_files})</span>
+                  <span className="text-[10px] text-muted-foreground uppercase">Source Files ({architecture.total_files || architecture.files?.length || 4})</span>
                   <div className="space-y-1 mt-1 max-h-40 overflow-y-auto pr-1">
                     {architecture.files?.map((f: string) => (
                       <div key={f} className="flex items-center justify-between p-1.5 rounded bg-black/40 text-[11px] border border-border/40">
@@ -174,10 +244,11 @@ export function MissionControlView({
                 </div>
 
                 <div className="pt-2 border-t border-border/40">
-                  <span className="text-[10px] text-muted-foreground uppercase">Affected Culprits</span>
+                  <span className="text-[10px] text-muted-foreground uppercase">Target Modifiable Files</span>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                    {(architecture.files || ["auth.py", "test_rbac.py"])
+                    {(architecture.files || ["auth.py", "app.py"])
                       .filter((f: string) => !f.includes("pytest.ini"))
+                      .slice(0, 3)
                       .map((f: string) => (
                         <span
                           key={f}
@@ -195,7 +266,7 @@ export function MissionControlView({
               </div>
             ) : (
               <div className="text-center py-8 text-xs font-mono text-muted-foreground">
-                Analyzing repository AST...
+                Scanning repository AST...
               </div>
             )}
           </div>
@@ -228,9 +299,14 @@ export function MissionControlView({
 
             {/* Live Structured Plan Steps */}
             <div className="mt-2 pt-2 border-t border-border/60 space-y-1.5">
-              <span className="text-[10px] font-mono text-muted-foreground uppercase font-semibold">
-                Autonomous Execution Plan
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono text-muted-foreground uppercase font-semibold">
+                  Autonomous Execution Plan ({plan.length} Steps)
+                </span>
+                <span className="text-[9px] font-mono text-[#76b900]">
+                  NVIDIA NIM Dynamic Synthesis
+                </span>
+              </div>
               <div className="space-y-1 max-h-36 overflow-y-auto">
                 {plan.map((step) => {
                   let badge = "text-muted-foreground bg-muted/40";
@@ -282,7 +358,13 @@ export function MissionControlView({
                 {telemetry?.last_model || "meta/llama-3.2-11b-vision-instruct"}
               </div>
               <div className="text-[10px] text-cyan-400">
-                Provider: {telemetry?.last_provider || "NVIDIA NIM / Nebius"}
+                Provider: {telemetry?.last_provider || "NVIDIA NIM"}
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1">
+                <span>Inference Latency:</span>
+                <span className="text-[#76b900] font-bold">
+                  {telemetry?.last_latency_ms ? `${telemetry.last_latency_ms}ms` : "Live Cloud"}
+                </span>
               </div>
             </div>
 
@@ -290,32 +372,37 @@ export function MissionControlView({
             <div className="p-2.5 rounded-lg bg-black/40 border border-border/40 space-y-1">
               <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] uppercase font-semibold">
                 <Zap className="w-3 h-3 text-cyan-400" />
-                <span>Nebius Infrastructure</span>
+                <span>Execution Sandbox</span>
               </div>
               <div className="text-foreground font-bold text-xs">
-                GPU Cloud Cluster (EU-West)
+                Native Subprocess Pytest Runner
               </div>
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1">
-                <span>Inference Latency:</span>
-                <span className="text-[#76b900] font-bold">{telemetry?.last_latency_ms || 128}ms</span>
+              <div className="text-[10px] text-muted-foreground">
+                Shell=False • Secret Scrubbing • Hard Timeouts
               </div>
             </div>
 
             {/* Self-Healing Iterations Summary */}
             <div className="p-2.5 rounded-lg bg-black/40 border border-border/40 space-y-2">
               <div className="flex items-center justify-between text-[10px] uppercase text-muted-foreground font-semibold">
-                <span>Self-Healing Iterations</span>
+                <span>Self-Healing Loop</span>
                 <span className="text-foreground">{iterations.length} / 3</span>
               </div>
 
-              {iterations.map((it) => (
-                <div key={it.iteration} className="flex items-center justify-between text-[11px] p-1 rounded bg-muted/20 border border-border/30">
-                  <span>Attempt {it.iteration}:</span>
-                  <span className={it.passed ? "text-emerald-400 font-bold" : "text-rose-400 font-semibold"}>
-                    {it.passed ? "✓ VERIFIED (7/7)" : `FAILED (${it.passed_tests}/${it.total_tests})`}
-                  </span>
+              {iterations.length === 0 ? (
+                <div className="text-[10px] text-muted-foreground py-1">
+                  Ready to launch autonomous execution.
                 </div>
-              ))}
+              ) : (
+                iterations.map((it) => (
+                  <div key={it.iteration} className="flex items-center justify-between text-[11px] p-1 rounded bg-muted/20 border border-border/30">
+                    <span>Attempt {it.iteration}:</span>
+                    <span className={it.passed ? "text-emerald-400 font-bold" : "text-rose-400 font-semibold"}>
+                      {it.passed ? `✓ VERIFIED (${it.passed_tests}/${it.total_tests})` : `FAILED (${it.passed_tests}/${it.total_tests})`}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
 
             {/* Confidence Score Gauge */}
@@ -324,7 +411,7 @@ export function MissionControlView({
                 Verification Confidence
               </span>
               <div className="text-2xl font-bold font-mono text-[#76b900]">
-                {verificationScore.toFixed(1)}%
+                {verificationScore > 0 ? `${verificationScore.toFixed(1)}%` : "—"}
               </div>
               <span className="text-[9px] text-muted-foreground block">
                 Derived from real pytest assertions

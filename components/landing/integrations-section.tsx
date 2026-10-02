@@ -66,18 +66,18 @@ const logos: Record<string, React.ReactNode> = {
 };
 
 const integrations = [
-  { name: "OpenAI", category: "LLM" },
-  { name: "Anthropic", category: "LLM" },
-  { name: "Slack", category: "Comms" },
-  { name: "GitHub", category: "Code" },
-  { name: "Jira", category: "PM" },
-  { name: "AWS S3", category: "Storage" },
-  { name: "Google Drive", category: "Docs" },
-  { name: "Salesforce", category: "CRM" },
-  { name: "HubSpot", category: "Marketing" },
-  { name: "Zapier", category: "Auto" },
-  { name: "Snowflake", category: "Data" },
-  { name: "Stripe", category: "Payments" },
+  { name: "NVIDIA NIM", category: "Reasoning" },
+  { name: "Nebius Cloud", category: "GPU Cluster" },
+  { name: "Pytest", category: "Test Runner" },
+  { name: "GitHub", category: "Git & Delivery" },
+  { name: "FastAPI", category: "API Backend" },
+  { name: "Python 3.12", category: "Runtime" },
+  { name: "Docker", category: "Isolation" },
+  { name: "Next.js 16", category: "Mission UI" },
+  { name: "AST Engine", category: "Topology" },
+  { name: "SQLite", category: "Persistence" },
+  { name: "WebSockets", category: "Event Bus" },
+  { name: "Three.js", category: "Core WebGL" },
 ];
 
 export function IntegrationsSection() {
@@ -107,22 +107,22 @@ export function IntegrationsSection() {
           isVisible ? "opacity-100" : "opacity-0"
         }`}>
           <span className="w-12 h-px bg-foreground/20" />
-          Integrations
+          Ecosystem &amp; Tooling
           <span className="w-12 h-px bg-foreground/20" />
         </span>
 
         <h2 className={`text-6xl md:text-7xl lg:text-[128px] font-display tracking-tight leading-[0.9] transition-all duration-1000 ${
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
         }`}>
-          Connect
+          Ecosystem
           <br />
-          <span className="text-muted-foreground">everything.</span>
+          <span className="text-muted-foreground">by design.</span>
         </h2>
 
         <p className={`mt-8 text-xl text-muted-foreground leading-relaxed max-w-lg mx-auto transition-all duration-1000 delay-100 ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}>
-          Your agents connect to 100+ tools and services. They read, write, and act autonomously across your entire stack.
+          NEXUS connects to your Git repositories, runs native pytest test harnesses, leverages NVIDIA NIM reasoning, and delivers verified Pull Requests.
         </p>
       </div>
 
@@ -210,9 +210,9 @@ export function IntegrationsSection() {
         }`}>
           <div className="flex flex-wrap gap-12">
             {[
-              { value: "100+", label: "Integrations" },
-              { value: "OAuth", label: "Auth built-in" },
-              { value: "Webhooks", label: "Real-time sync" },
+              { value: "0", label: "Simulated Tests" },
+              { value: "<140ms", label: "NVIDIA NIM Latency" },
+              { value: "100%", label: "Verified Delivery" },
             ].map((stat) => (
               <div key={stat.label} className="flex items-baseline gap-3">
                 <span className="text-3xl font-display">{stat.value}</span>
@@ -221,8 +221,8 @@ export function IntegrationsSection() {
             ))}
           </div>
 
-          <a href="#" className="group inline-flex items-center gap-2 text-sm font-mono text-muted-foreground hover:text-foreground transition-colors">
-            View all integrations
+          <a href="http://127.0.0.1:8000/docs" target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-2 text-sm font-mono text-muted-foreground hover:text-foreground transition-colors">
+            Explore API Documentation
             <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
           </a>
         </div>

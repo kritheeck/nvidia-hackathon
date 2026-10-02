@@ -4,20 +4,20 @@ import { useState, useEffect, useRef } from "react";
 
 const features = [
   { 
-    title: "TypeScript native", 
-    description: "Full type safety for agent configs and responses."
+    title: "AST Symbol Discovery", 
+    description: "Progressive syntax tree parsing maps classes, functions, and imports safely."
   },
   { 
-    title: "Streaming results", 
-    description: "Watch your agents think and act in real-time."
+    title: "Streaming Event Bus", 
+    description: "Live WebSocket feeds stream stdout, stderr, and stage transitions in real-time."
   },
   { 
-    title: "Multi-model support", 
-    description: "OpenAI, Anthropic, Mistral, or bring your own."
+    title: "NVIDIA NIM Reasoning", 
+    description: "Surgical planning and failure diagnosis powered by Llama 3.2 11B & Nemotron."
   },
   { 
-    title: "Local debugging", 
-    description: "Test agents locally before deploying to cloud."
+    title: "Automated Git Delivery", 
+    description: "Commits verified line-by-line diffs and opens Pull Requests on GitHub."
   },
 ];
 
@@ -68,12 +68,12 @@ export function DevelopersSection() {
         >
           <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-6">
             <span className="w-8 h-px bg-foreground/30" />
-            Developer SDK
+            Engineering Intelligence
           </span>
           <h2 className="text-6xl md:text-7xl lg:text-[128px] font-display tracking-tight leading-[0.9]">
-            Code your agents.
+            Give code an outcome.
             <br />
-            <span className="text-muted-foreground">Or let them code.</span>
+            <span className="text-muted-foreground">NEXUS verifies delivery.</span>
           </h2>
         </div>
 
@@ -84,8 +84,7 @@ export function DevelopersSection() {
           }`}
         >
           <p className="text-xl text-muted-foreground mb-12 leading-relaxed max-w-md">
-            A powerful SDK for building, deploying, and orchestrating AI agents. 
-            Define behaviors in code or natural language.
+            A complete autonomous software engineering loop. From progressive AST repository discovery to isolated sandbox execution and verified Pull Request synthesis.
           </p>
           <div className="grid grid-cols-2 gap-6">
             {features.map((feature, index) => (

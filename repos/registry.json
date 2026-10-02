@@ -1,0 +1,26 @@
+[
+  {
+    "id": "rbac-service",
+    "name": "RBAC Role Hierarchy API",
+    "path": "C:\\Users\\Kritheeck\\Documents\\vo template\\repos\\rbac-service",
+    "source_type": "starter",
+    "description": "Authentication and authorization service with role hierarchy validation.",
+    "default_objective": "Enforce hierarchical role inheritance so admin users seamlessly access member workspace settings without 403 Forbidden errors."
+  },
+  {
+    "id": "session-cache-service",
+    "name": "Session Cache Engine",
+    "path": "C:\\Users\\Kritheeck\\Documents\\vo template\\repos\\session-cache-service",
+    "source_type": "starter",
+    "description": "Thread-safe LRU cache service with capacity boundaries and TTL expiration.",
+    "default_objective": "Prevent unbounded dictionary growth in session cache by adding LRU eviction and thread-safe limits."
+  },
+  {
+    "id": "task-manager-api",
+    "name": "Task Manager Service",
+    "path": "C:\\Users\\Kritheeck\\Documents\\vo template\\repos\\task-manager-api",
+    "source_type": "starter",
+    "description": "Task management engine with lifecycle validation and test assertions.",
+    "default_objective": "Add status transition guards and ensure task titles cannot be whitespace-only."
+  }
+]

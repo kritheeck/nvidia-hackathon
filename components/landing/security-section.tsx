@@ -6,31 +6,31 @@ import { Shield, Lock, Eye, FileCheck } from "lucide-react";
 const securityFeatures = [
   {
     icon: Shield,
-    title: "Isolated execution",
-    description: "Each agent runs in its own secure sandbox.",
+    title: "Process-Isolated Sandboxing",
+    description: "Child processes execute with shell=False and command allowlists to prevent injection.",
     image: "/images/isolated.jpg",
   },
   {
     icon: Lock,
-    title: "Encrypted memory",
-    description: "Data encrypted at rest and in transit.",
+    title: "Automatic Secret Scrubbing",
+    description: "Environment variables like NVIDIA_API_KEY and GITHUB_TOKEN are stripped from child runs.",
     image: "/images/encrypted.jpg",
   },
   {
     icon: Eye,
-    title: "Full audit trails",
-    description: "Every action logged and inspectable.",
+    title: "Path Traversal Protection",
+    description: "Strict path boundary verification prevents ../ escape beyond the repository root.",
     image: "/images/audit.jpg",
   },
   {
     icon: FileCheck,
-    title: "Permission boundaries",
-    description: "Principle of least privilege by design.",
+    title: "Bounded Execution Engine",
+    description: "Hard timeouts (30s) and bounded iteration caps prevent runaway self-healing loops.",
     image: "/images/permissions.jpg",
   },
 ];
 
-const certifications = ["SOC 2", "ISO 27001", "HIPAA", "GDPR"];
+const certifications = ["Process Isolated", "Secret Scrubbed", "Shell=False", "Air-Gapped Safe"];
 
 export function SecuritySection() {
   const [isVisible, setIsVisible] = useState(false);
@@ -67,7 +67,7 @@ export function SecuritySection() {
             isVisible ? "opacity-100" : "opacity-0"
           }`}>
             <span className="w-12 h-px bg-foreground/20" />
-            Security
+            Sandbox Security &amp; Safety
           </span>
           
           {/* Title — full width */}
@@ -76,7 +76,7 @@ export function SecuritySection() {
           }`}>
             Autonomous,
             <br />
-            <span className="text-muted-foreground">not uncontrolled.</span>
+            <span className="text-muted-foreground">strictly bounded.</span>
           </h2>
           
           {/* Description — below title */}
@@ -84,7 +84,7 @@ export function SecuritySection() {
             isVisible ? "opacity-100" : "opacity-0"
           }`}>
             <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl">
-              Your agents are powerful but constrained. Enterprise-grade security ensures they only do what you allow.
+              NEXUS executes untrusted code and automated test suites inside fortified, process-isolated subprocess sandboxes with secret scrubbing and strict path traversal guards.
             </p>
           </div>
         </div>

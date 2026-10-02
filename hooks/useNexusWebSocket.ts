@@ -86,8 +86,7 @@ export function useNexusWebSocket(
           url = `${isHttps ? "wss:" : "ws:"}//${rawHost}/ws/nexus`;
         }
       } else {
-        const hostname = window.location.hostname || "127.0.0.1";
-        url = `${isHttps ? "wss:" : "ws:"}//${hostname}:8000/ws/nexus`;
+        url = `${isHttps ? "wss:" : "ws:"}//127.0.0.1:8000/ws/nexus`;
       }
 
       const ws = new WebSocket(url);

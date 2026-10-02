@@ -11,6 +11,7 @@ import { IntegrationsSection } from "@/components/landing/integrations-section";
 import { SecuritySection } from "@/components/landing/security-section";
 import { DevelopersSection } from "@/components/landing/developers-section";
 import { TestimonialsSection } from "@/components/landing/testimonials-section";
+import { PricingSection } from "@/components/landing/pricing-section";
 import { CtaSection } from "@/components/landing/cta-section";
 import { FooterSection } from "@/components/landing/footer-section";
 
@@ -67,8 +68,8 @@ function ConnectionBadge({ status, onReconnect }: { status: WsStatus; onReconnec
 
 // ── Main Page ───────────────────────────────────────────────────────────────
 export default function Home() {
-  // Default directly to Mission Control — autonomous engineering platform
-  const [activeView, setActiveView] = useState<string>("mission_control");
+  // Default to Overview landing page template
+  const [activeView, setActiveView] = useState<string>("overview");
 
   // System & Mission State
   const [systemState, setSystemState] = useState<string>("IDLE");
@@ -219,7 +220,17 @@ export default function Home() {
           setActiveScenarioId(d.active_scenario);
       })
       .catch(() => {});
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Polling interval ensures live mission state sync even if WS reconnects
+    const pollInterval = setInterval(() => {
+      fetch("/api/snapshot")
+        .then((r) => r.json())
+        .then(applySnapshot)
+        .catch(() => {});
+    }, 1500);
+
+    return () => clearInterval(pollInterval);
+  }, [applySnapshot, activeScenarioId]);
 
   // ── Mission actions with Dual-Transport (WebSocket + REST fallback) ────────
   const handleRunMission = async () => {
@@ -273,10 +284,31 @@ export default function Home() {
     }
   };
 
-  const handleScenarioChange = (id: string) => {
+  const handleScenarioChange = async (id: string) => {
     setActiveScenarioId(id);
     const sc = scenarios.find((s) => s.id === id);
-    if (sc) setTaskObjective(sc.objective);
+    if (sc?.objective) setTaskObjective(sc.objective);
+
+    try {
+      const res = await fetch("/api/repos/select", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ repo_id: id }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        if (d.analysis) setArchitecture(d.analysis);
+      }
+      // Refresh tree
+      const treeRes = await fetch("/api/repo/tree");
+      if (treeRes.ok) {
+        const treeData = await treeRes.json();
+        if (treeData.tree) setTreeData(treeData.tree);
+        if (treeData.architecture) setArchitecture(treeData.architecture);
+      }
+    } catch (e) {
+      console.error("Error switching active repo:", e);
+    }
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -311,6 +343,12 @@ export default function Home() {
           <SecuritySection />
           <DevelopersSection />
           <TestimonialsSection />
+          <PricingSection
+            onSelectPlan={() => {
+              setActiveView("mission_control");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          />
           <CtaSection
             onStartMission={() => {
               setActiveView("mission_control");
@@ -353,7 +391,11 @@ export default function Home() {
 
       {activeView === "repositories" && (
         <div className="pt-24 pb-16 px-4 md:px-8 max-w-[1440px] mx-auto">
-          <RepositoriesView treeData={treeData} architecture={architecture} />
+          <RepositoriesView
+            treeData={treeData}
+            architecture={architecture}
+            onSelectRepo={handleScenarioChange}
+          />
         </div>
       )}
 

@@ -5,50 +5,47 @@ import { ArrowRight, Check, Zap } from "lucide-react";
 
 const plans = [
   {
-    name: "Explorer",
-    description: "For tinkering and small automations",
+    name: "Developer Edition",
+    description: "For individual hackathon engineers and local repository testing",
     price: { monthly: 0, annual: 0 },
     features: [
-      "3 concurrent agents",
-      "1,000 tasks/month",
-      "Community support",
-      "Basic logging",
-      "Public integrations",
+      "Process-isolated pytest sandbox",
+      "NVIDIA NIM (Llama 3.2 11B) inference",
+      "AST symbol parsing & dependency graphing",
+      "Local Git branch & surgical patch creation",
+      "Deterministic baseline fallback engine",
     ],
-    cta: "Start free",
+    cta: "Launch Sandbox",
     highlight: false,
   },
   {
-    name: "Builder",
-    description: "For teams shipping with agents",
+    name: "Autonomous Team",
+    description: "For teams shipping continuous self-healing engineering loops",
     price: { monthly: 79, annual: 65 },
     features: [
-      "25 concurrent agents",
-      "50,000 tasks/month",
-      "Priority support",
-      "Full audit trails",
-      "Private integrations",
-      "Team workspaces",
-      "Custom agent roles",
+      "Multi-repository orchestration & switching",
+      "Nebius GPU SXM5 cluster acceleration",
+      "Automated GitHub Pull Request delivery",
+      "Real-time WebSocket telemetry & trace streams",
+      "Strict verification scoring (100% test pass)",
+      "Zero-mock execution on physical disk files",
     ],
-    cta: "Start trial",
+    cta: "Start Mission",
     highlight: true,
   },
   {
-    name: "Scale",
-    description: "For agent-first organizations",
+    name: "Enterprise Fleet",
+    description: "For mission-critical production codebases and sovereign clouds",
     price: { monthly: null, annual: null },
     features: [
-      "Unlimited agents",
-      "Unlimited tasks",
-      "24/7 dedicated support",
-      "On-premise deployment",
-      "SLA guarantee",
-      "Custom LLM routing",
-      "Advanced security",
-      "Dedicated compute",
+      "Air-gapped on-premise NIM deployment",
+      "Dedicated NVIDIA H100 SXM5 GPU nodes",
+      "Custom AST lint rules & static analysis policies",
+      "Fine-grained RBAC & branch protection enforcement",
+      "Subprocess timeout & memory quota governance",
+      "SLA guarantee with persistent audit trails",
     ],
-    cta: "Contact sales",
+    cta: "Contact Engineers",
     highlight: false,
   },
 ];
@@ -82,12 +79,12 @@ export function PricingSection({ onSelectPlan }: PricingProps) {
           <div className="lg:col-span-7">
             <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-8">
               <span className="w-12 h-px bg-foreground/30" />
-              Pricing
+              Execution Tiers
             </span>
             <h2 className={`text-6xl md:text-7xl lg:text-[128px] font-display tracking-tight leading-[0.9] transition-all duration-1000 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}>
-              Pay for
+              Autonomous
               <br />
               <span className="text-stroke">results.</span>
             </h2>
@@ -100,7 +97,7 @@ export function PricingSection({ onSelectPlan }: PricingProps) {
             }`}>
               <img
                 src="/images/whale.png"
-                alt="Organic whale"
+                alt="Neural compute intelligence"
                 className="w-full h-full object-contain object-center"
               />
             </div>
@@ -195,19 +192,19 @@ export function PricingSection({ onSelectPlan }: PricingProps) {
           <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-2">
               <Check className="w-4 h-4 text-[#eca8d6]" />
-              Encrypted execution
+              Process-isolated sandbox
             </span>
             <span className="flex items-center gap-2">
               <Check className="w-4 h-4 text-[#eca8d6]" />
-              Full audit logs
+              Persistent mission audit logs
             </span>
             <span className="flex items-center gap-2">
               <Check className="w-4 h-4 text-[#eca8d6]" />
-              Multi-model routing
+              NVIDIA NIM inference
             </span>
           </div>
-          <a href="#" className="text-sm underline underline-offset-4 hover:text-foreground transition-colors">
-            Compare all features
+          <a href="http://127.0.0.1:8000/docs" target="_blank" rel="noreferrer" className="text-sm underline underline-offset-4 hover:text-foreground transition-colors font-mono">
+            FastAPI Backend Docs &rarr;
           </a>
         </div>
       </div>

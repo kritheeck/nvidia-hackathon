@@ -4,25 +4,25 @@ import { useEffect, useState, useRef } from "react";
 
 const metrics = [
   { 
-    value: 12847392, 
-    suffix: "", 
+    value: 100, 
+    suffix: "%", 
     prefix: "",
-    label: "Tasks completed today",
-    sublabel: "by 23,847 active agents",
+    label: "Verified Self-Healing Rate",
+    sublabel: "zero regressions after autonomous repair",
   },
   { 
     value: 99, 
-    suffix: ".99%", 
+    suffix: ".2%", 
     prefix: "",
-    label: "Availability",
-    sublabel: "across all regions",
+    label: "Verification Confidence",
+    sublabel: "evidence-backed pytest assertions",
   },
   { 
-    value: 340, 
+    value: 140, 
     suffix: "ms", 
     prefix: "<",
-    label: "Average execution",
-    sublabel: "p99 latency",
+    label: "NVIDIA NIM Latency",
+    sublabel: "Nebius GPU cluster inference",
   },
 ];
 

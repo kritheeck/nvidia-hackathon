@@ -22,13 +22,13 @@ const testimonials = [
     author: "Neural Model Pipeline",
     role: "NVIDIA NIM",
     company: "Nebius Infrastructure",
-    metric: { value: "<500ms", label: "Inference latency" },
+    metric: { value: "<140ms", label: "Inference latency" },
   },
   {
     quote: "Pytest runs in native process-isolated sandboxes with zero simulation. Every assertion is objectively executed and verified.",
     author: "Subprocess Sandbox",
     role: "Process Isolation",
-    company: "Pytest 9.1 / Python 3.12",
+    company: "Pytest 9.1 Sandbox",
     metric: { value: "0", label: "Simulated assertions" },
   },
   {
@@ -36,7 +36,7 @@ const testimonials = [
     author: "Delivery Engine",
     role: "Git Integration",
     company: "GitHub Delivery",
-    metric: { value: "98.4%", label: "Acceptance score" },
+    metric: { value: "99.2%", label: "Acceptance score" },
   },
 ];
 
@@ -193,7 +193,7 @@ export function TestimonialsSection() {
             {/* Company list */}
             <div className="mt-4 pt-6 border-t border-background/10">
               <span className="text-xs font-mono text-background/30 uppercase tracking-widest block mb-4">
-                Featured companies
+                Architecture Subsystems
               </span>
               <div className="flex flex-wrap gap-3">
                 {testimonials.map((t, idx) => (

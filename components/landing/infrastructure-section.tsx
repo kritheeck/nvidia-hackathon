@@ -3,10 +3,10 @@
 import { useEffect, useState, useRef } from "react";
 
 const regions = [
-  { name: "North America", nodes: 12, status: "operational" },
-  { name: "Europe", nodes: 8, status: "operational" },
-  { name: "Asia Pacific", nodes: 6, status: "operational" },
-  { name: "South America", nodes: 3, status: "operational" },
+  { name: "Nebius GPU Cluster", nodes: "8x H100 SXM5", status: "operational" },
+  { name: "NVIDIA NIM Inference", nodes: "Llama 3.2 11B", status: "operational" },
+  { name: "Subprocess Sandbox", nodes: "Pytest 9.1", status: "isolated" },
+  { name: "GitHub Delivery Engine", nodes: "REST API v3", status: "connected" },
 ];
 
 export function InfrastructureSection() {
@@ -44,7 +44,7 @@ export function InfrastructureSection() {
             isVisible ? "opacity-100" : "opacity-0"
           }`}>
             <span className="w-12 h-px bg-foreground/20" />
-            Global infrastructure
+            Compute &amp; Model Infrastructure
           </span>
           
           <div className="grid lg:grid-cols-[auto_1fr] gap-8 lg:gap-16 items-stretch">
@@ -64,16 +64,15 @@ export function InfrastructureSection() {
               <h2 className={`text-6xl md:text-7xl lg:text-[128px] font-display tracking-tight leading-[0.9] transition-all duration-1000 ${
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
               }`}>
-                Global by
+                Accelerated by
                 <br />
-                <span className="text-muted-foreground">default.</span>
+                <span className="text-muted-foreground">NVIDIA NIM.</span>
               </h2>
 
               <p className={`mt-8 text-xl text-muted-foreground leading-relaxed max-w-lg transition-all duration-1000 delay-100 ${
                 isVisible ? "opacity-100" : "opacity-0"
               }`}>
-                Your agents run on distributed infrastructure across 29 regions.
-                Sub-50ms latency to 99% of the world.
+                NEXUS executes multi-step architectural planning and traceback diagnosis across high-throughput Nebius GPU clusters powered by NVIDIA open-source reasoning models.
               </p>
             </div>
           </div>
@@ -144,11 +143,11 @@ export function InfrastructureSection() {
             
             <div className="relative z-10">
               <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-8xl lg:text-[10rem] font-display leading-none">29</span>
-                <span className="text-2xl text-muted-foreground">regions</span>
+                <span className="text-8xl lg:text-[10rem] font-display leading-none">H100</span>
+                <span className="text-2xl text-muted-foreground">SXM5</span>
               </div>
               <p className="text-muted-foreground max-w-md">
-                Compute nodes distributed globally for maximum redundancy and minimum latency.
+                High-throughput Nebius GPU cloud clusters delivering rapid token generation and deep diagnostic reasoning.
               </p>
             </div>
           </div>
@@ -158,15 +157,15 @@ export function InfrastructureSection() {
             <div className={`p-8 border border-foreground/10 bg-foreground/[0.02] transition-all duration-700 delay-100 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}>
-              <span className="text-5xl lg:text-6xl font-display">99.99%</span>
-              <span className="block text-sm text-muted-foreground mt-2">Uptime SLA</span>
+              <span className="text-5xl lg:text-6xl font-display text-[#76b900]">100%</span>
+              <span className="block text-sm text-muted-foreground mt-2">Verified Self-Healing Loop</span>
             </div>
             
             <div className={`p-8 border border-foreground/10 bg-foreground/[0.02] transition-all duration-700 delay-200 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}>
-              <span className="text-5xl lg:text-6xl font-display">&lt;50ms</span>
-              <span className="block text-sm text-muted-foreground mt-2">Global latency</span>
+              <span className="text-5xl lg:text-6xl font-display text-cyan-400">&lt;140ms</span>
+              <span className="block text-sm text-muted-foreground mt-2">NVIDIA NIM Inference Latency</span>
             </div>
           </div>
         </div>
@@ -180,20 +179,20 @@ export function InfrastructureSection() {
               key={region.name}
               className={`p-6 border transition-all duration-300 cursor-default ${
                 activeRegion === index 
-                  ? "border-foreground/30 bg-foreground/[0.04]" 
+                  ? "border-[#76b900]/40 bg-[#76b900]/[0.04]" 
                   : "border-foreground/10"
               }`}
             >
               <div className="flex items-center gap-2 mb-3">
                 <span className={`w-2 h-2 rounded-full transition-colors ${
-                  activeRegion === index ? "bg-[#eca8d6]" : "bg-foreground/20"
+                  activeRegion === index ? "bg-[#76b900]" : "bg-foreground/20"
                 }`} />
                 <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
                   {region.status}
                 </span>
               </div>
               <span className="font-medium block mb-1">{region.name}</span>
-              <span className="text-sm text-muted-foreground">{region.nodes} nodes</span>
+              <span className="text-sm text-muted-foreground">{region.nodes}</span>
             </div>
           ))}
         </div>
