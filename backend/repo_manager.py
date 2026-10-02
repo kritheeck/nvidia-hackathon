@@ -9,10 +9,11 @@ Manages real, functional Git repositories on disk:
 import os
 import sys
 import json
+import time
 import shutil
 import subprocess
 import pathlib
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 
 # Ensure backend directory is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
@@ -20,6 +21,25 @@ from repository_intel import RepositoryIntel
 
 REPOS_BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "repos"))
 REGISTRY_FILE = os.path.join(REPOS_BASE_DIR, "registry.json")
+
+# ─── Analysis Cache ──────────────────────────────────────────────────────────
+# Stores (analysis_dict, timestamp) per repo path.
+# Avoids re-running expensive AST walks on every /api/repos or /api/snapshot call.
+# TTL = 60 seconds.  Invalidated on clone / pull.
+_ANALYSIS_CACHE: Dict[str, Tuple[Dict[str, Any], float]] = {}
+_ANALYSIS_TTL_SECS: float = 60.0
+
+
+def _get_cached_analysis(path: str) -> Optional[Dict[str, Any]]:
+    """Returns cached repo analysis if still fresh, else None."""
+    entry = _ANALYSIS_CACHE.get(path)
+    if entry and (time.time() - entry[1]) < _ANALYSIS_TTL_SECS:
+        return entry[0]
+    return None
+
+
+def _set_cached_analysis(path: str, analysis: Dict[str, Any]) -> None:
+    _ANALYSIS_CACHE[path] = (analysis, time.time())
 
 # Starter Repo 1: RBAC API Service
 RBAC_FILES = {
@@ -441,7 +461,11 @@ class RepositoryManager:
         return "rbac-service"
 
     def list_repositories(self) -> List[Dict[str, Any]]:
-        """Returns metadata for all registered repositories with live AST discovery."""
+        """
+        Returns metadata for all registered repositories.
+        Uses a 60-second per-repo analysis cache so repeated calls
+        (e.g. from snapshot polling) do NOT re-run expensive AST walks.
+        """
         registry = self._load_registry()
         enriched = []
         for r in registry:
@@ -449,10 +473,14 @@ class RepositoryManager:
             if not path or not os.path.exists(path):
                 continue
 
-            intel = RepositoryIntel(path)
-            analysis = intel.analyze()
+            # Use cached analysis if fresh, otherwise re-analyze
+            analysis = _get_cached_analysis(path)
+            if analysis is None:
+                intel = RepositoryIntel(path)
+                analysis = intel.analyze()
+                _set_cached_analysis(path, analysis)
 
-            # Git branch info
+            # Git branch info (fast — just reads .git/HEAD)
             branch = "main"
             try:
                 out = subprocess.run(
@@ -460,7 +488,7 @@ class RepositoryManager:
                     cwd=path,
                     capture_output=True,
                     text=True,
-                    timeout=3
+                    timeout=5,
                 )
                 if out.returncode == 0 and out.stdout.strip():
                     branch = out.stdout.strip()
@@ -480,9 +508,10 @@ class RepositoryManager:
                 "language": analysis.get("language", "Python"),
                 "test_command": analysis.get("test_command", "pytest -v"),
                 "total_files": analysis.get("total_files", 0),
+                "truncated": analysis.get("truncated", False),
                 "has_tests": analysis.get("has_tests", False),
                 "files": analysis.get("files", []),
-                "is_active": (r["id"] == self.active_repo_id)
+                "is_active": (r["id"] == self.active_repo_id),
             })
         return enriched
 
@@ -520,36 +549,88 @@ class RepositoryManager:
         return False
 
     def clone_github_repo(self, url: str, custom_name: Optional[str] = None) -> Dict[str, Any]:
-        """Clones a real GitHub repository using `git clone`."""
+        """
+        Clones a real GitHub repository using `git clone --depth 1`.
+        Large-repo hardening:
+          - Timeout extended to 120 s (handles monorepos and slow connections)
+          - Blob-filter partial clone as fallback if shallow clone fails
+          - git pull timeout extended to 30 s on subsequent calls
+          - Clears stale analysis cache entry for this path on re-clone
+        """
         url = url.strip()
-        if not url.startswith("http://") and not url.startswith("https://") and not url.startswith("git@"):
+        if not (
+            url.startswith("http://")
+            or url.startswith("https://")
+            or url.startswith("git@")
+        ):
             raise ValueError("Invalid Git repository URL. Must start with https:// or git@")
 
-        # Derive folder name
+        # Derive safe folder name
         repo_name = custom_name or url.rstrip("/").split("/")[-1].replace(".git", "")
         clean_name = "".join(c for c in repo_name if c.isalnum() or c in ("-", "_")).lower()
         if not clean_name:
             clean_name = f"repo-{int(os.getpid())}"
 
         target_dir = os.path.join(self.base_dir, clean_name)
+
         if os.path.exists(target_dir):
-            # Already cloned, update origin
+            # Already cloned — do a safe incremental pull
             try:
-                subprocess.run(["git", "pull"], cwd=target_dir, check=False, capture_output=True, timeout=15)
+                subprocess.run(
+                    ["git", "pull", "--ff-only"],
+                    cwd=target_dir,
+                    check=False,
+                    capture_output=True,
+                    timeout=30,
+                )
             except Exception:
                 pass
+            # Invalidate cache so next list call re-analyzes the updated repo
+            _ANALYSIS_CACHE.pop(target_dir, None)
         else:
+            clone_err = ""
+            # 1st attempt: standard shallow clone (fast, handles most repos)
             try:
                 res = subprocess.run(
-                    ["git", "clone", "--depth", "1", url, target_dir],
+                    ["git", "clone", "--depth", "1", "--single-branch", url, target_dir],
                     capture_output=True,
                     text=True,
-                    timeout=45
+                    timeout=120,
                 )
                 if res.returncode != 0:
-                    raise RuntimeError(f"Git clone failed: {res.stderr}")
+                    clone_err = res.stderr
+                    raise RuntimeError(clone_err)
             except subprocess.TimeoutExpired:
-                raise TimeoutError("Git clone timed out after 45 seconds.")
+                clone_err = "Shallow clone timed out (120 s)"
+            except RuntimeError:
+                pass
+
+            # 2nd attempt: partial blob clone (large LFS / huge-file repos)
+            if not os.path.exists(target_dir) or clone_err:
+                if os.path.exists(target_dir):
+                    shutil.rmtree(target_dir, ignore_errors=True)
+                try:
+                    res2 = subprocess.run(
+                        [
+                            "git", "clone",
+                            "--depth", "1",
+                            "--filter=blob:none",   # partial clone — skip large blobs
+                            "--single-branch",
+                            url, target_dir,
+                        ],
+                        capture_output=True,
+                        text=True,
+                        timeout=120,
+                    )
+                    if res2.returncode != 0:
+                        raise RuntimeError(f"Git clone failed:\n{res2.stderr}")
+                except subprocess.TimeoutExpired:
+                    if os.path.exists(target_dir):
+                        shutil.rmtree(target_dir, ignore_errors=True)
+                    raise TimeoutError(
+                        "Git clone timed out after 120 seconds. "
+                        "The repository may be too large or the connection too slow."
+                    )
 
         repo_entry = {
             "id": clean_name,
@@ -558,11 +639,10 @@ class RepositoryManager:
             "source_type": "github",
             "remote_url": url,
             "description": f"Cloned from {url}",
-            "default_objective": "Analyze codebase, verify tests, and resolve issues."
+            "default_objective": "Analyze codebase, verify tests, and resolve issues.",
         }
 
         registry = self._load_registry()
-        # Replace existing or append
         registry = [r for r in registry if r["id"] != clean_name]
         registry.append(repo_entry)
         self._save_registry(registry)
