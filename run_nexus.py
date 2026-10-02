@@ -20,8 +20,9 @@ def main():
     print("[+] API Documentation:   http://127.0.0.1:8000/docs")
     print("[+] Real-time WebSocket: ws://127.0.0.1:8000/ws/nexus\n")
     
-    # Run uvicorn server on all interfaces so localhost and 127.0.0.1 both work
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False, log_level="info")
+    # Bind to 127.0.0.1 (localhost only) — keeps API off LAN/network interfaces.
+    # Change to 0.0.0.0 only if deploying behind a reverse proxy (nginx/caddy).
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=False, log_level="info")
 
 if __name__ == "__main__":
     main()

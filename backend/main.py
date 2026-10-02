@@ -8,6 +8,7 @@ import asyncio
 import json
 import os
 import sys
+import time
 from typing import Any, Dict, Optional, Set, List
 
 # Ensure backend directory is in sys.path
@@ -33,12 +34,21 @@ app = FastAPI(
     version="2.5.0",
 )
 
+# ── CORS — restrict to localhost origins only (hackathon/local dev) ───────────
+# For public deployment: replace with your actual frontend domain.
+_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
 )
 
 
@@ -276,11 +286,26 @@ async def save_repo_file(req: SaveFileRequest):
 
 # ── Mission Control ────────────────────────────────────────────────────────────
 
+# ── Mission run rate-limit state (prevents spam-launching) ────────────────────
+_last_mission_start: float = 0.0
+_MISSION_COOLDOWN_SECS: float = 10.0
+
+
 @app.post("/api/mission/run")
 async def run_mission(req: MissionRunRequest):
+    global _last_mission_start
+
     if orchestrator.is_running:
         return {"error": "Mission already executing", "state": orchestrator.state.value}
 
+    # Rate-limit: disallow re-launch within cooldown window
+    now = time.time()
+    elapsed = now - _last_mission_start
+    if elapsed < _MISSION_COOLDOWN_SECS:
+        wait = round(_MISSION_COOLDOWN_SECS - elapsed, 1)
+        return {"error": f"Mission cooldown active. Please wait {wait}s.", "cooldown_remaining": wait}
+
+    _last_mission_start = now
     target_repo = req.repo_id or req.scenario_id or orchestrator.active_scenario_id
     asyncio.create_task(
         orchestrator.run_mission(

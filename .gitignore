@@ -7,17 +7,40 @@ __v0_jsx-dev-runtime.ts
 .vercel/
 next.user-config.*
 
-# Environment variables
+# Environment variables — ALL .env variants are excluded
 .env
-.env*.local
-.env.production
+.env.*
+!.env.example
+*.local
+
+# Secrets & credentials — never commit these
+*.pem
+*.key
+*.cert
+*.pfx
+secrets.json
+credentials.json
 
 # Common ignores
-node_modules
+node_modules/
 .next/
 .DS_Store
 __pycache__/
 *.pyc
+*.pyo
 .vscode/devBoost/
+
+# Database files
 *.db
+*.sqlite
+*.sqlite3
 nexus_missions.db
+
+# Python virtual environments
+venv/
+.venv/
+env/
+.env_dir/
+
+# OS
+Thumbs.db
